@@ -6,8 +6,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#FBF6EF"
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F8E4DC"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -15,7 +18,11 @@
       "bundleIdentifier": "ai.softlifesocietyai.app"
     },
     "android": {
-      "package": "ai.softlifesocietyai.app"
+      "package": "ai.softlifesocietyai.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#F8E4DC"
+      }
     },
     "plugins": ["expo-router", "expo-font"],
     "extra": {
