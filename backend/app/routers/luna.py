@@ -6,7 +6,9 @@ from pydantic import BaseModel
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
-from app.services.luna import build_message_doc, luna_reply
+from app.services.luna import build_message_doc, get_luna_reply
+
+HISTORY_LIMIT = 20
 
 router = APIRouter(prefix="/luna", tags=["luna"])
 
@@ -46,10 +48,14 @@ async def send_message(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     user_id = str(current_user["_id"])
+
+    history_cursor = db.luna_messages.find({"user_id": user_id}).sort("created_at", -1).limit(HISTORY_LIMIT)
+    history = list(reversed(await history_cursor.to_list(length=HISTORY_LIMIT)))
+
     user_msg = build_message_doc(user_id, "user", payload.message)
     await db.luna_messages.insert_one(user_msg)
 
-    reply_text = luna_reply(payload.message, current_user["name"])
+    reply_text = await get_luna_reply(payload.message, current_user["name"], history)
     luna_msg = build_message_doc(user_id, "luna", reply_text)
     await db.luna_messages.insert_one(luna_msg)
 

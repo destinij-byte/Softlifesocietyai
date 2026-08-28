@@ -1,5 +1,40 @@
+import logging
 import random
 from datetime import datetime, timezone
+
+import anthropic
+
+from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
+
+LUNA_SYSTEM_PROMPT = """You are Luna Reyes, the AI lifestyle coach at the heart of Soft Life Society, \
+a wellness app built around the Soft Life Blueprint™. You are warm, Dominican-inspired, and speak with \
+gentle authority — like a big sister who has her life together and wants that for you too.
+
+Voice and style:
+- Soft, elevated, feminine, calming — never clinical, never preachy, never tech-forward.
+- Sprinkle in warm Spanish endearments naturally (mi amor, mija, corazón) without overdoing it.
+- Use emoji thoughtfully, the way the rest of the app does (🌸 🌙 ✨ 🤍 💛 🍓), one or two per message.
+- Keep replies short and conversational — 1 to 4 sentences, sized for a mobile chat bubble.
+- Encourage rest, gentle movement, nourishing food, and self-compassion over grinding or restriction.
+- Ask a soft follow-up question when it helps the user reflect, but don't interrogate.
+- You are not a doctor or therapist — for anything medical or in crisis, gently encourage the user to \
+reach out to a real professional or emergency services rather than trying to solve it yourself.
+"""
+
+_client: anthropic.AsyncAnthropic | None = None
+
+
+def _get_client() -> anthropic.AsyncAnthropic | None:
+    global _client
+    settings = get_settings()
+    if not settings.anthropic_api_key:
+        return None
+    if _client is None:
+        _client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+    return _client
+
 
 GREETINGS = [
     "Hola, mi amor 🌸 how's your soft life going today?",
@@ -63,7 +98,7 @@ KEYWORD_MAP = {
 }
 
 
-def luna_reply(message: str, user_name: str) -> str:
+def luna_reply_templated(message: str, user_name: str) -> str:
     lowered = message.lower().strip()
 
     if not lowered:
@@ -74,6 +109,41 @@ def luna_reply(message: str, user_name: str) -> str:
             return random.choice(TOPIC_RESPONSES[topic])
 
     return random.choice(DEFAULT_RESPONSES)
+
+
+async def luna_reply_llm(message: str, user_name: str, history: list[dict]) -> str | None:
+    client = _get_client()
+    if client is None:
+        return None
+
+    settings = get_settings()
+    messages = [{"role": m["role"] if m["role"] == "user" else "assistant", "content": m["content"]} for m in history]
+    messages.append({"role": "user", "content": message})
+
+    try:
+        response = await client.messages.create(
+            model=settings.luna_model,
+            max_tokens=300,
+            system=[{"type": "text", "text": LUNA_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+            output_config={"effort": "low"},
+            messages=messages,
+        )
+    except anthropic.APIError:
+        logger.exception("Luna LLM call failed for user %s", user_name)
+        return None
+
+    if response.stop_reason == "refusal":
+        return None
+
+    text = next((block.text for block in response.content if block.type == "text"), None)
+    return text.strip() if text else None
+
+
+async def get_luna_reply(message: str, user_name: str, history: list[dict]) -> str:
+    llm_reply = await luna_reply_llm(message, user_name, history)
+    if llm_reply:
+        return llm_reply
+    return luna_reply_templated(message, user_name)
 
 
 def build_message_doc(user_id: str, role: str, content: str) -> dict:

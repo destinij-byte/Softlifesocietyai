@@ -38,6 +38,8 @@ uvicorn app.main:app --reload
 
 The API runs at `http://localhost:8000` (docs at `/docs`). Requires a running MongoDB instance (local or Atlas) — set `MONGODB_URI` in `.env`.
 
+**Luna's replies:** set `ANTHROPIC_API_KEY` in `.env` to have Luna respond via the real Claude API (persona + conversation history, model configurable via `LUNA_MODEL`, defaults to `claude-opus-5`). Leave it unset and Luna falls back to built-in templated responses — no API calls, no cost, useful for local dev.
+
 ## Running the frontend
 
 ```bash
@@ -56,4 +58,4 @@ Update `extra.apiUrl` in `frontend/app.json` if your backend isn't at `http://lo
 
 ## Status
 
-Core features are scaffolded and wired end-to-end (auth, trial/paywall, Luna chat, tracking, meal plans, challenges, community). Next steps: richer Luna coaching logic (optionally backed by an LLM), payment provider integration (Stripe/RevenueCat) for real subscriptions, push notifications, and App Store assets/submission.
+Core features are scaffolded and wired end-to-end (auth, trial/paywall, Luna chat, tracking, meal plans, challenges, community), and Luna is backed by the real Claude API when `ANTHROPIC_API_KEY` is set. Verified locally: a full backend API smoke test (auth, chat, nutrition, workouts, meal plans, challenges, social, subscriptions) and a browser walkthrough of the Expo web build (light/dark mode, signup → Luna chat → tracking). Next steps: payment provider integration (Stripe/RevenueCat) for real subscriptions, push notifications, and App Store assets/submission.

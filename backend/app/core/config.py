@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     trial_length_days: int = 7
 
+    anthropic_api_key: str | None = None
+    luna_model: str = "claude-opus-5"
+
 
 @lru_cache
 def get_settings() -> Settings:
