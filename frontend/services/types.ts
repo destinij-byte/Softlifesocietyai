@@ -36,6 +36,8 @@ export type FoodEntry = {
   logged_at: string;
 };
 
+export type WaterState = { count: number; goal: number };
+
 export type DailySummary = {
   date: string;
   total_calories: number;

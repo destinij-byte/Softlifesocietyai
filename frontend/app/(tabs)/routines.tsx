@@ -9,7 +9,7 @@ import { Icon } from "@/components/Icon";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
 import { AffirmationState, Routine } from "@/services/types";
-import { spacing } from "@/theme/tokens";
+import { spacing, typography } from "@/theme/tokens";
 
 export default function Routines() {
   const { theme } = useAppTheme();
@@ -116,7 +116,9 @@ export default function Routines() {
       {affirmations && (
         <Card elevated style={{ gap: spacing.sm }}>
           <Subtitle style={{ fontSize: 16 }}>✨ Today's Affirmation</Subtitle>
-          <Body style={{ fontStyle: "italic" }}>"{affirmations.daily_affirmation}"</Body>
+          <Body style={{ fontFamily: typography.displayItalic, fontSize: 16, lineHeight: 22 }}>
+            "{affirmations.daily_affirmation}"
+          </Body>
 
           <View style={{ height: 1, backgroundColor: theme.border, marginVertical: spacing.xs }} />
 

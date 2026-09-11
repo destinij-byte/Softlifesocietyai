@@ -63,7 +63,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="challenges"
-        options={{ title: "Challenges", tabBarIcon: ({ color, focused }) => <TabIcon name="trophy" color={color} focused={focused} /> }}
+        options={{ title: "Wins", tabBarIcon: ({ color, focused }) => <TabIcon name="trophy" color={color} focused={focused} /> }}
       />
       <Tabs.Screen
         name="me"

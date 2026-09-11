@@ -8,7 +8,7 @@ import { StaggerIn } from "@/components/StaggerIn";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
-import { DailySummary, LeaderboardRow, MealSuggestion, MyChallenge, Routine } from "@/services/types";
+import { DailySummary, LeaderboardRow, MealSuggestion, MyChallenge, Routine, WaterState } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
 function greeting(): string {
@@ -22,7 +22,8 @@ export default function Home() {
   const { user } = useAuth();
   const { theme } = useAppTheme();
   const [summary, setSummary] = useState<DailySummary | null>(null);
-  const [focusSteps, setFocusSteps] = useState<{ id: string; label: string; routineType: "morning" | "night" }[]>([]);
+  const [water, setWater] = useState<WaterState | null>(null);
+  const [focusSteps, setFocusSteps] = useState<{ id: string; label: string; done: boolean; routineType: "morning" | "night" }[]>([]);
   const [habitsDone, setHabitsDone] = useState(0);
   const [habitsTotal, setHabitsTotal] = useState(0);
   const [myChallenges, setMyChallenges] = useState<MyChallenge[]>([]);
@@ -31,8 +32,9 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const [nourish, morning, night, challenges, board] = await Promise.all([
+    const [nourish, waterData, morning, night, challenges, board] = await Promise.all([
       apiRequest<DailySummary>("/nourish/today"),
+      apiRequest<WaterState>("/nourish/water"),
       apiRequest<Routine>("/routines/morning"),
       apiRequest<Routine>("/routines/night"),
       apiRequest<MyChallenge[]>("/challenges/mine"),
@@ -40,6 +42,7 @@ export default function Home() {
     ]);
 
     setSummary(nourish);
+    setWater(waterData);
 
     const allSteps = [
       ...morning.steps.map((s) => ({ ...s, routineType: "morning" as const })),
@@ -47,7 +50,7 @@ export default function Home() {
     ];
     setHabitsTotal(allSteps.length);
     setHabitsDone(allSteps.filter((s) => s.done).length);
-    setFocusSteps(allSteps.filter((s) => !s.done).slice(0, 3));
+    setFocusSteps(allSteps.slice(0, 3));
 
     setMyChallenges(challenges);
     setLeaderboard(board);
@@ -79,7 +82,7 @@ export default function Home() {
   const remaining = Math.max(summary.goal_calories - summary.total_calories, 0);
   const proteinLeft = Math.max(summary.goal_protein_g - summary.total_protein_g, 0);
   const bestChallenge = myChallenges.sort((a, b) => b.streak - a.streak)[0];
-  const waterChallenge = myChallenges.find((c) => c.slug === "water-intake");
+  const focusDone = focusSteps.filter((s) => s.done).length;
 
   return (
     <Screen>
@@ -91,11 +94,13 @@ export default function Home() {
 
       <StaggerIn index={1}>
         <Card style={{ gap: spacing.sm }}>
-          <Subtitle>Today's Focus 🌸</Subtitle>
-          {focusSteps.length === 0 && <Muted>You've cleared your routines today — beautiful work.</Muted>}
+          <Subtitle>
+            Today's Focus · {focusDone}/{focusSteps.length}
+          </Subtitle>
+          {focusSteps.length === 0 && <Muted>Set up your morning routine to see it here.</Muted>}
           {focusSteps.map((step) => (
             <Body key={step.id} onPress={() => toggleFocusStep(step)}>
-              ⬜️ {step.label}
+              {step.done ? "☑️" : "⬜️"} {step.label}
             </Body>
           ))}
         </Card>
@@ -103,9 +108,9 @@ export default function Home() {
 
       <StaggerIn index={2}>
         <View style={{ flexDirection: "row", gap: spacing.sm }}>
-          <StatTile label="Calories left" value={`${remaining}`} theme={theme} />
-          <StatTile label="Habits" value={`${habitsDone}/${habitsTotal}`} theme={theme} />
-          <StatTile label="Water" value={waterChallenge ? (waterChallenge.logged_today ? "✅" : "💧") : "—"} theme={theme} />
+          <StatTile label={`of ${summary.goal_calories} cal`} value={`🔥 ${summary.total_calories}`} theme={theme} />
+          <StatTile label="glasses" value={`💧 ${water?.count ?? 0}/${water?.goal ?? 8}`} theme={theme} />
+          <StatTile label="habits" value={`🎯 ${habitsDone}/${habitsTotal}`} theme={theme} />
         </View>
       </StaggerIn>
 

@@ -10,7 +10,7 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { ProgressRing } from "@/components/ProgressRing";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest, apiUpload } from "@/services/api";
-import { DailySummary, FoodResult, MealSuggestion } from "@/services/types";
+import { DailySummary, FoodResult, MealSuggestion, WaterState } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
 const MEAL_EMOJI: Record<string, string> = { breakfast: "🥐", lunch: "🥗", dinner: "🍽️", snack: "🍓" };
@@ -21,6 +21,8 @@ type AddMode = "none" | "photo" | "search" | "manual";
 export default function NourishAI() {
   const { theme } = useAppTheme();
   const [summary, setSummary] = useState<DailySummary | null>(null);
+  const [water, setWater] = useState<WaterState | null>(null);
+  const [waterBusy, setWaterBusy] = useState(false);
   const [addMode, setAddMode] = useState<AddMode>("none");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +37,30 @@ export default function NourishAI() {
   const [builderSuggestion, setBuilderSuggestion] = useState<MealSuggestion | null>(null);
 
   const load = async () => {
-    const data = await apiRequest<DailySummary>("/nourish/today");
+    const [data, waterData] = await Promise.all([
+      apiRequest<DailySummary>("/nourish/today"),
+      apiRequest<WaterState>("/nourish/water"),
+    ]);
     setSummary(data);
+    setWater(waterData);
+  };
+
+  const addWater = async () => {
+    setWaterBusy(true);
+    try {
+      setWater(await apiRequest<WaterState>("/nourish/water/add", { method: "POST" }));
+    } finally {
+      setWaterBusy(false);
+    }
+  };
+
+  const removeWater = async () => {
+    setWaterBusy(true);
+    try {
+      setWater(await apiRequest<WaterState>("/nourish/water/remove", { method: "POST" }));
+    } finally {
+      setWaterBusy(false);
+    }
   };
 
   useFocusEffect(
@@ -126,16 +150,31 @@ export default function NourishAI() {
 
       <Card style={{ alignItems: "center", gap: spacing.sm }}>
         <ProgressRing progress={summary.total_calories / summary.goal_calories} size={160}>
-          <Subtitle style={{ fontSize: 26 }}>{Math.max(remaining, 0)}</Subtitle>
-          <Muted>cal left</Muted>
+          <Subtitle style={{ fontSize: 26 }}>{summary.total_calories}</Subtitle>
+          <Muted>of {summary.goal_calories}</Muted>
         </ProgressRing>
 
         <View style={{ width: "100%", gap: spacing.sm, marginTop: spacing.sm }}>
-          <MacroRow label="Protein" value={summary.total_protein_g} goal={summary.goal_protein_g} unit="g" />
-          <MacroRow label="Carbs" value={summary.total_carbs_g} goal={summary.goal_carbs_g} unit="g" />
-          <MacroRow label="Fat" value={summary.total_fat_g} goal={summary.goal_fat_g} unit="g" />
+          <MacroRow label="🥩 Protein" value={summary.total_protein_g} goal={summary.goal_protein_g} unit="g" />
+          <MacroRow label="🍚 Carbs" value={summary.total_carbs_g} goal={summary.goal_carbs_g} unit="g" />
+          <MacroRow label="🥑 Fat" value={summary.total_fat_g} goal={summary.goal_fat_g} unit="g" />
         </View>
       </Card>
+
+      {water && (
+        <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View>
+            <Subtitle style={{ fontSize: 15 }}>💧 Water</Subtitle>
+            <Muted>
+              {water.count} / {water.goal} glasses
+            </Muted>
+          </View>
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <Button label="−" variant="secondary" onPress={removeWater} loading={waterBusy} disabled={water.count === 0} />
+            <Button label="+" onPress={addWater} loading={waterBusy} />
+          </View>
+        </Card>
+      )}
 
       <Card accent style={{ gap: spacing.xs }}>
         <Subtitle>What should I eat? 💛</Subtitle>
@@ -234,6 +273,7 @@ export default function NourishAI() {
 }
 
 function MacroRow({ label, value, goal, unit }: { label: string; value: number; goal: number; unit: string }) {
+  const over = goal > 0 && value > goal;
   return (
     <View style={{ gap: 4 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -244,7 +284,7 @@ function MacroRow({ label, value, goal, unit }: { label: string; value: number; 
           {unit}
         </Muted>
       </View>
-      <ProgressBar progress={goal > 0 ? value / goal : 0} />
+      <ProgressBar progress={goal > 0 ? value / goal : 0} danger={over} />
     </View>
   );
 }

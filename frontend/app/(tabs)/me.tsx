@@ -2,19 +2,15 @@ import React from "react";
 import { Pressable, View } from "react-native";
 import { router } from "expo-router";
 import { Screen } from "@/components/Screen";
-import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
+import { Card, Subtitle, Body, Muted } from "@/components/Themed";
+import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Icon, IconName } from "@/components/Icon";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme, AppearancePreference } from "@/context/ThemeContext";
-import { elevation, spacing } from "@/theme/tokens";
+import { spacing } from "@/theme/tokens";
 
-const MENU_ITEMS: { label: string; icon: IconName }[] = [
-  { label: "Nutrition preferences", icon: "plate" },
-  { label: "Personal preferences", icon: "heart" },
-  { label: "Notifications", icon: "bell" },
-  { label: "Privacy", icon: "lock" },
-];
+type MenuItem = { label: string; icon: IconName; onPress: () => void };
 
 const APPEARANCE_OPTIONS: { key: AppearancePreference; label: string; icon: IconName }[] = [
   { key: "light", label: "Light", icon: "sun" },
@@ -22,88 +18,88 @@ const APPEARANCE_OPTIONS: { key: AppearancePreference; label: string; icon: Icon
   { key: "system", label: "System", icon: "sliders" },
 ];
 
+const STATUS_LABEL: Record<string, string> = {
+  trialing: "Free trial",
+  active: "Active subscriber",
+  free: "Free tier",
+  expired: "Trial expired",
+  canceled: "Canceled",
+};
+
+function trialDaySummary(user: { trial_started_at: string; trial_ends_at: string; subscription_status: string }): string {
+  if (user.subscription_status !== "trialing") return STATUS_LABEL[user.subscription_status] ?? user.subscription_status;
+  const start = new Date(user.trial_started_at).getTime();
+  const totalDays = Math.max(1, Math.round((new Date(user.trial_ends_at).getTime() - start) / (1000 * 60 * 60 * 24)));
+  const elapsed = Math.min(totalDays, Math.max(1, Math.ceil((Date.now() - start) / (1000 * 60 * 60 * 24))));
+  return `Free trial · Day ${elapsed} of ${totalDays}`;
+}
+
 export default function Me() {
   const { user, logOut } = useAuth();
   const { theme, preference, setPreference } = useAppTheme();
 
   if (!user) return null;
 
-  const statusLabel: Record<string, string> = {
-    trialing: "🌷 Free trial",
-    active: "✨ Active subscriber",
-    free: "🤍 Free tier",
-    expired: "🌙 Trial expired",
-    canceled: "Canceled",
-  };
+  const menuItems: MenuItem[] = [
+    { label: "Goals", icon: "target", onPress: () => router.push("/(tabs)/goals") },
+    { label: "Routines", icon: "checklist", onPress: () => router.push("/(tabs)/routines") },
+    { label: "Nutrition preferences", icon: "plate", onPress: () => router.push("/(tabs)/nourish-ai") },
+    { label: "Subscription", icon: "sparkle", onPress: () => router.push("/(auth)/paywall") },
+    { label: "Personal preferences", icon: "heart", onPress: () => {} },
+    { label: "Notifications", icon: "bell", onPress: () => {} },
+    { label: "Privacy", icon: "lock", onPress: () => {} },
+  ];
 
   return (
     <Screen>
-      <View style={{ alignItems: "center", gap: spacing.xs }}>
-        <View
-          style={{
-            width: 76,
-            height: 76,
-            borderRadius: 38,
-            backgroundColor: theme.surface,
-            borderWidth: 1.5,
-            borderColor: theme.primary,
-            alignItems: "center",
-            justifyContent: "center",
-            ...elevation.soft,
-          }}
-        >
-          <Body style={{ fontSize: 30 }}>{user.avatar_emoji}</Body>
+      <Card style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+        <Avatar name={user.name} size={56} />
+        <View style={{ flex: 1 }}>
+          <Subtitle style={{ fontSize: 16 }}>{user.name}</Subtitle>
+          <Muted>{trialDaySummary(user)}</Muted>
         </View>
-        <Title>{user.name}</Title>
-        <Muted>{user.email}</Muted>
-      </View>
+      </Card>
 
-      <Card>
-        <Subtitle>Subscription</Subtitle>
-        <Body style={{ marginTop: spacing.xs }}>{statusLabel[user.subscription_status] ?? user.subscription_status}</Body>
-        {user.subscription_tier && <Muted>{user.subscription_tier} plan</Muted>}
-        <View style={{ marginTop: spacing.sm }}>
-          <Button label="Manage subscription" variant="secondary" onPress={() => router.push("/(auth)/paywall")} />
-        </View>
+      <Card style={{ gap: 0 }}>
+        {menuItems.map((item, i) => (
+          <Pressable
+            key={item.label}
+            onPress={item.onPress}
+            style={[styles.menuRow, i < menuItems.length - 1 ? { borderBottomWidth: 1, borderBottomColor: theme.border } : null]}
+          >
+            <Icon name={item.icon} size={17} color={theme.textMuted} />
+            <Body style={{ flex: 1 }}>{item.label}</Body>
+            <Muted>›</Muted>
+          </Pressable>
+        ))}
       </Card>
 
       <Card style={{ gap: spacing.sm }}>
-        <Subtitle>Appearance</Subtitle>
-        <View style={{ flexDirection: "row", gap: spacing.sm }}>
+        <Subtitle style={{ fontSize: 15 }}>Appearance</Subtitle>
+        <View style={{ flexDirection: "row", backgroundColor: theme.surfaceAlt, borderRadius: 11, padding: 3 }}>
           {APPEARANCE_OPTIONS.map((opt) => {
             const active = preference === opt.key;
             return (
-              <Button
+              <Pressable
                 key={opt.key}
-                label={opt.label}
-                icon={<Icon name={opt.icon} size={16} color={active ? "#1A1A1A" : theme.text} />}
-                variant={active ? "primary" : "secondary"}
                 onPress={() => setPreference(opt.key)}
-              />
+                style={{
+                  flex: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 5,
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                  backgroundColor: active ? theme.surface : "transparent",
+                }}
+              >
+                <Icon name={opt.icon} size={14} color={theme.text} />
+                <Body style={{ fontSize: 12 }}>{opt.label}</Body>
+              </Pressable>
             );
           })}
         </View>
-      </Card>
-
-      <Card style={{ gap: 0 }}>
-        <Subtitle style={{ marginBottom: spacing.sm }}>Goals & Routines</Subtitle>
-        <Pressable onPress={() => router.push("/(tabs)/goals")} style={styles.menuRow}>
-          <Icon name="target" size={18} color={theme.text} />
-          <Body>Goals</Body>
-        </Pressable>
-        <Pressable onPress={() => router.push("/(tabs)/routines")} style={styles.menuRow}>
-          <Icon name="checklist" size={18} color={theme.text} />
-          <Body>Routines</Body>
-        </Pressable>
-      </Card>
-
-      <Card style={{ gap: 0 }}>
-        {MENU_ITEMS.map((item) => (
-          <View key={item.label} style={styles.menuRow}>
-            <Icon name={item.icon} size={18} color={theme.textMuted} />
-            <Body style={{ color: theme.textMuted }}>{item.label}</Body>
-          </View>
-        ))}
       </Card>
 
       <Button label="Log out" variant="ghost" onPress={logOut} />
@@ -116,6 +112,6 @@ const styles = {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 2,
   },
 };

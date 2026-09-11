@@ -1,11 +1,13 @@
 import React, { useCallback, useState } from "react";
-import { Share, View } from "react-native";
+import { Share, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { Screen } from "@/components/Screen";
 import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/TextField";
 import { ProgressBar } from "@/components/ProgressBar";
+import { Avatar } from "@/components/Avatar";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
 import { ChallengeTemplate, LeaderboardRow, MyChallenge } from "@/services/types";
@@ -18,6 +20,29 @@ const INTENSITIES = [
 ];
 
 const MEDALS = ["🥇", "🥈", "🥉"];
+
+function IntensityBadge({ intensity }: { intensity: string }) {
+  const { theme } = useAppTheme();
+  if (intensity === "hard") {
+    return (
+      <View style={[styles.badge, { backgroundColor: theme.danger }]}>
+        <Body style={styles.badgeText}>HARD</Body>
+      </View>
+    );
+  }
+  if (intensity === "easy") {
+    return (
+      <View style={[styles.badge, { backgroundColor: theme.surfaceAlt }]}>
+        <Body style={[styles.badgeText, { color: theme.primary }]}>EASY</Body>
+      </View>
+    );
+  }
+  return (
+    <LinearGradient colors={theme.goldGradient as [string, string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>
+      <Body style={[styles.badgeText, { color: "#241704" }]}>MEDIUM</Body>
+    </LinearGradient>
+  );
+}
 
 export default function Challenges() {
   const { theme } = useAppTheme();
@@ -94,21 +119,28 @@ export default function Challenges() {
 
   return (
     <Screen>
-      <Title>Challenges</Title>
+      <View style={{ gap: 6 }}>
+        <Title>Wins</Title>
+        <LinearGradient colors={theme.goldGradient as [string, string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.goldRule} />
+        <Muted>Do hard things, together.</Muted>
+      </View>
 
       {mine.length > 0 && (
         <View style={{ gap: spacing.sm }}>
           <Muted>My Challenges</Muted>
           {mine.map((c) => (
             <Card key={c.slug} style={{ gap: spacing.xs }}>
-              <Subtitle>
-                {c.emoji} {c.title} {c.intensity ? `(${c.intensity})` : ""}
-              </Subtitle>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Subtitle style={{ fontSize: 15 }}>
+                  {c.emoji} {c.title}
+                </Subtitle>
+                {c.intensity && <IntensityBadge intensity={c.intensity} />}
+              </View>
+              {c.duration_days < 9999 && <ProgressBar progress={c.progress} />}
               <Muted>
                 Day {c.day_count}
-                {c.duration_days < 9999 ? ` / ${c.duration_days}` : ""} · 🔥 {c.streak} day streak · {c.points} pts
+                {c.duration_days < 9999 ? ` of ${c.duration_days}` : ""} · 🔥 {c.streak} day streak · {c.points} pts
               </Muted>
-              {c.duration_days < 9999 && <ProgressBar progress={c.progress} />}
               <Button
                 label={c.logged_today ? "Logged today ✅" : "Log Today"}
                 emoji={c.logged_today ? undefined : "📍"}
@@ -149,14 +181,20 @@ export default function Challenges() {
           ))}
       </View>
 
-      <Card style={{ gap: spacing.sm }}>
-        <Subtitle>💛 Family & Friends Leaderboard</Subtitle>
+      <Card accent style={{ gap: spacing.sm }}>
+        <Subtitle style={{ fontSize: 15 }}>🏆 Family & Friends Leaderboard</Subtitle>
         {leaderboard.map((row) => (
-          <View key={row.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Body style={{ fontWeight: row.is_you ? "700" : "400", color: row.is_you ? theme.primary : theme.text }}>
-              {row.rank <= 3 ? MEDALS[row.rank - 1] : `#${row.rank}`} {row.avatar_emoji} {row.is_you ? "You" : row.name}
-            </Body>
-            <Muted>
+          <View
+            key={row.id}
+            style={[
+              styles.lbRow,
+              row.is_you ? { backgroundColor: theme.surfaceAlt, borderRadius: 10, paddingHorizontal: spacing.sm } : null,
+            ]}
+          >
+            <Muted style={{ width: 20, textAlign: "center" }}>{row.rank <= 3 ? MEDALS[row.rank - 1] : `#${row.rank}`}</Muted>
+            <Avatar name={row.is_you ? "You" : row.name} size={26} />
+            <Body style={{ flex: 1, fontWeight: row.is_you ? "700" : "400" }}>{row.is_you ? "You" : row.name}</Body>
+            <Muted style={{ color: row.is_you ? theme.primary : theme.textMuted, fontWeight: "700" }}>
               {row.points} pts · 🔥{row.streak}
             </Muted>
           </View>
@@ -178,3 +216,10 @@ export default function Challenges() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  goldRule: { width: 30, height: 3, borderRadius: 3 },
+  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  badgeText: { fontSize: 9, fontWeight: "800" as const, color: "#FFFFFF", letterSpacing: 0.4 },
+  lbRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 6 },
+});

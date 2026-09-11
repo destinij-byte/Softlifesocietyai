@@ -195,3 +195,53 @@ async def meal_builder(
 
     suggestion = await build_meal_suggestion(max(remaining_calories, 0), max(remaining_protein, 0), meal_type)
     return MealSuggestion(**suggestion)
+
+
+WATER_GOAL_GLASSES = 8
+
+
+class WaterOut(BaseModel):
+    count: int
+    goal: int = WATER_GOAL_GLASSES
+
+
+@router.get("/water", response_model=WaterOut)
+async def get_water(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    today = date.today().isoformat()
+    doc = await db.water_logs.find_one({"user_id": str(current_user["_id"]), "log_date": today})
+    return WaterOut(count=doc["count"] if doc else 0)
+
+
+@router.post("/water/add", response_model=WaterOut)
+async def add_water(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    today = date.today().isoformat()
+    doc = await db.water_logs.find_one_and_update(
+        {"user_id": str(current_user["_id"]), "log_date": today},
+        {"$inc": {"count": 1}},
+        upsert=True,
+        return_document=True,
+    )
+    return WaterOut(count=doc["count"])
+
+
+@router.post("/water/remove", response_model=WaterOut)
+async def remove_water(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    today = date.today().isoformat()
+    doc = await db.water_logs.find_one({"user_id": str(current_user["_id"]), "log_date": today})
+    current = doc["count"] if doc else 0
+    new_count = max(0, current - 1)
+    await db.water_logs.update_one(
+        {"user_id": str(current_user["_id"]), "log_date": today},
+        {"$set": {"count": new_count}},
+        upsert=True,
+    )
+    return WaterOut(count=new_count)
