@@ -57,4 +57,33 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   return response.json() as Promise<T>;
 }
 
+export async function apiUpload<T>(path: string, fileUri: string, fieldName = "photo"): Promise<T> {
+  const token = await getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const filename = fileUri.split("/").pop() || "photo.jpg";
+  const match = /\.(\w+)$/.exec(filename);
+  const ext = match ? match[1].toLowerCase() : "jpg";
+  const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+
+  const formData = new FormData();
+  formData.append(fieldName, { uri: fileUri, name: filename, type: mimeType } as unknown as Blob);
+
+  const response = await fetch(`${API_URL}${path}`, { method: "POST", headers, body: formData });
+
+  if (!response.ok) {
+    let detail = `Request failed (${response.status})`;
+    try {
+      const errJson = await response.json();
+      detail = errJson.detail ?? detail;
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(detail);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export { API_URL };

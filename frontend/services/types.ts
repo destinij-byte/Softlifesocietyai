@@ -5,7 +5,7 @@ export type User = {
   avatar_emoji: string;
   trial_started_at: string;
   trial_ends_at: string;
-  subscription_status: "trialing" | "active" | "expired" | "canceled";
+  subscription_status: "trialing" | "active" | "free" | "expired" | "canceled";
   subscription_tier: string | null;
 };
 
@@ -15,9 +15,12 @@ export type AuthResponse = {
   user: User;
 };
 
+export type LunaMode = "life" | "money" | "wellness" | "goals";
+
 export type ChatMessage = {
   role: "user" | "luna";
   content: string;
+  mode: LunaMode;
   created_at: string;
 };
 
@@ -25,6 +28,9 @@ export type FoodEntry = {
   id: string;
   name: string;
   calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
   meal_type: "breakfast" | "lunch" | "dinner" | "snack";
   emoji: string;
   logged_at: string;
@@ -34,43 +40,84 @@ export type DailySummary = {
   date: string;
   total_calories: number;
   goal_calories: number;
+  total_protein_g: number;
+  goal_protein_g: number;
+  total_carbs_g: number;
+  goal_carbs_g: number;
+  total_fat_g: number;
+  goal_fat_g: number;
   entries: FoodEntry[];
 };
 
-export type Workout = {
-  id: string;
+export type FoodResult = {
   name: string;
-  workout_type: string;
-  duration_minutes: number;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
   emoji: string;
-  notes: string | null;
-  logged_at: string;
 };
 
-export type MealPlan = {
+export type MealSuggestion = FoodResult & {
+  description?: string | null;
+  note?: string | null;
+};
+
+export type Milestone = { id: string; title: string; done: boolean };
+
+export type Goal = {
   id: string;
   title: string;
+  category: "money" | "wellness" | "career" | "personal";
+  target: string;
+  deadline: string | null;
   emoji: string;
-  description: string;
-  days: number;
-  meals: Record<string, string>;
+  progress: number;
+  milestones: Milestone[];
+  created_at: string;
 };
 
-export type Challenge = {
+export type RoutineStep = { id: string; label: string; done: boolean };
+
+export type Routine = {
+  type: "morning" | "night";
+  steps: RoutineStep[];
+};
+
+export type ChallengeTemplate = {
   slug: string;
   title: string;
   emoji: string;
-  description: string;
   duration_days: number;
-  joined: boolean;
-  completed: boolean;
-  participant_count: number;
+  needs_intensity: boolean;
+  description?: string;
+};
+
+export type MyChallenge = {
+  slug: string;
+  title: string;
+  emoji: string;
+  intensity: string | null;
+  duration_days: number;
+  day_count: number;
+  streak: number;
+  points: number;
+  logged_today: boolean;
+  progress: number;
+};
+
+export type LeaderboardRow = {
+  id: string;
+  name: string;
+  avatar_emoji: string;
+  points: number;
+  streak: number;
+  is_you: boolean;
+  rank: number;
 };
 
 export type Friend = {
   id: string;
   name: string;
   avatar_emoji: string;
-  moved_today: boolean;
-  recent_activity_count: number;
 };

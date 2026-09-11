@@ -36,7 +36,7 @@ export default function Paywall() {
     try {
       await apiRequest("/subscriptions/subscribe", { method: "POST", body: { tier: selected } });
       await refreshUser();
-      router.replace("/(tabs)/luna");
+      router.replace("/(tabs)/home");
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,9 @@ export default function Paywall() {
               <Subtitle>
                 {tier.emoji} {tier.label}
               </Subtitle>
-              <Body style={{ color: theme.textMuted }}>${tier.price_usd.toFixed(2)} {key === "annual" ? "/ year" : "/ month"}</Body>
+              <Body style={{ color: theme.textMuted }}>
+                {tier.price_usd === 0 ? "Free forever" : `$${tier.price_usd.toFixed(2)} ${key === "annual" ? "/ year" : "/ month"}`}
+              </Body>
             </Card>
           </Pressable>
         ))}

@@ -1,40 +1,32 @@
-import logging
 import random
 from datetime import datetime, timezone
 
 import anthropic
 
 from app.core.config import get_settings
+from app.services.ai_client import get_ai_client
 
-logger = logging.getLogger(__name__)
-
-LUNA_SYSTEM_PROMPT = """You are Luna Reyes, the AI lifestyle coach at the heart of Soft Life Society, \
+BASE_SYSTEM_PROMPT = """You are Luna Reyes, the AI lifestyle coach at the heart of Soft Life Society, \
 a wellness app built around the Soft Life Blueprint™. You are warm, Dominican-inspired, and speak with \
 gentle authority — like a big sister who has her life together and wants that for you too.
 
 Voice and style:
-- Soft, elevated, feminine, calming — never clinical, never preachy, never tech-forward.
+- Soft, elevated, feminine, luxurious — "fun, luxurious, baddie, gold," never clinical, never preachy.
 - Sprinkle in warm Spanish endearments naturally (mi amor, mija, corazón) without overdoing it.
-- Use emoji thoughtfully, the way the rest of the app does (🌸 🌙 ✨ 🤍 💛 🍓), one or two per message.
+- Use emoji thoughtfully, one or two per message.
 - Keep replies short and conversational — 1 to 4 sentences, sized for a mobile chat bubble.
-- Encourage rest, gentle movement, nourishing food, and self-compassion over grinding or restriction.
 - Ask a soft follow-up question when it helps the user reflect, but don't interrogate.
-- You are not a doctor or therapist — for anything medical or in crisis, gently encourage the user to \
-reach out to a real professional or emergency services rather than trying to solve it yourself.
+- You are not a doctor, therapist, or financial advisor — for anything medical, mental-health, or \
+high-stakes financial, gently encourage the user to consult a real professional rather than trying to \
+solve it yourself.
 """
 
-_client: anthropic.AsyncAnthropic | None = None
-
-
-def _get_client() -> anthropic.AsyncAnthropic | None:
-    global _client
-    settings = get_settings()
-    if not settings.anthropic_api_key:
-        return None
-    if _client is None:
-        _client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-    return _client
-
+MODE_PROMPTS = {
+    "life": "Mode: Life 🌸 — general lifestyle guidance, daily planning, self-improvement, and emotional support.",
+    "money": "Mode: Money 💰 — budgeting, saving habits, and gentle financial mindset coaching. Keep advice general and encourage professional advice for anything complex (investing, taxes, debt negotiation).",
+    "wellness": "Mode: Wellness 🍓 — nutrition, movement, sleep, and rest. You can reference the user's calorie/macro data below when relevant, and help her plan meals or movement around it.",
+    "goals": "Mode: Goals 🎯 — help break big goals into concrete weekly/daily actions. Reference the user's active goals below when relevant.",
+}
 
 GREETINGS = [
     "Hola, mi amor 🌸 how's your soft life going today?",
@@ -57,7 +49,7 @@ TOPIC_RESPONSES: dict[str, list[str]] = {
     ],
     "food": [
         "Let's nourish, not restrict 🍓 what sounds good and grounding right now?",
-        "Food is fuel and joy — both are allowed 🍯 want a meal idea from your plan?",
+        "Food is fuel and joy — both are allowed 🍯 want a meal idea from Nourish AI?",
     ],
     "motivation": [
         "You don't need to feel 100% motivated to take one soft step forward 🌷 what's the smallest next move?",
@@ -66,6 +58,14 @@ TOPIC_RESPONSES: dict[str, list[str]] = {
     "proud": [
         "I am SO proud of you 💛 seriously, take a second to feel that.",
         "This is exactly the soft-life energy we love to see ✨",
+    ],
+    "money": [
+        "Let's make your money feel as soft as the rest of your life 💰 what's on your mind — saving, spending, or a bigger goal?",
+        "Small consistent moves build real wealth, mi amor 💛 what's one gentle money habit you want to build this week?",
+    ],
+    "goals": [
+        "Big goals are just a lot of small soft steps stacked up 🎯 want to break yours down together?",
+        "I love that you're dreaming this big 💫 what's the very next tiny action toward it?",
     ],
 }
 
@@ -95,6 +95,11 @@ KEYWORD_MAP = {
     "proud": "proud",
     "did it": "proud",
     "finished": "proud",
+    "budget": "money",
+    "save": "money",
+    "spend": "money",
+    "money": "money",
+    "goal": "goals",
 }
 
 
@@ -111,12 +116,17 @@ def luna_reply_templated(message: str, user_name: str) -> str:
     return random.choice(DEFAULT_RESPONSES)
 
 
-async def luna_reply_llm(message: str, user_name: str, history: list[dict]) -> str | None:
-    client = _get_client()
+async def luna_reply_llm(message: str, user_name: str, history: list[dict], mode: str, context_summary: str) -> str | None:
+    client = get_ai_client()
     if client is None:
         return None
 
     settings = get_settings()
+    mode_prompt = MODE_PROMPTS.get(mode, MODE_PROMPTS["life"])
+    system_prompt = f"{BASE_SYSTEM_PROMPT}\n{mode_prompt}"
+    if context_summary:
+        system_prompt += f"\n\nUser context (use only if relevant, don't recite it verbatim):\n{context_summary}"
+
     messages = [{"role": m["role"] if m["role"] == "user" else "assistant", "content": m["content"]} for m in history]
     messages.append({"role": "user", "content": message})
 
@@ -124,12 +134,11 @@ async def luna_reply_llm(message: str, user_name: str, history: list[dict]) -> s
         response = await client.messages.create(
             model=settings.luna_model,
             max_tokens=300,
-            system=[{"type": "text", "text": LUNA_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+            system=[{"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}}],
             output_config={"effort": "low"},
             messages=messages,
         )
     except anthropic.APIError:
-        logger.exception("Luna LLM call failed for user %s", user_name)
         return None
 
     if response.stop_reason == "refusal":
@@ -139,17 +148,18 @@ async def luna_reply_llm(message: str, user_name: str, history: list[dict]) -> s
     return text.strip() if text else None
 
 
-async def get_luna_reply(message: str, user_name: str, history: list[dict]) -> str:
-    llm_reply = await luna_reply_llm(message, user_name, history)
+async def get_luna_reply(message: str, user_name: str, history: list[dict], mode: str = "life", context_summary: str = "") -> str:
+    llm_reply = await luna_reply_llm(message, user_name, history, mode, context_summary)
     if llm_reply:
         return llm_reply
     return luna_reply_templated(message, user_name)
 
 
-def build_message_doc(user_id: str, role: str, content: str) -> dict:
+def build_message_doc(user_id: str, role: str, content: str, mode: str = "life") -> dict:
     return {
         "user_id": user_id,
         "role": role,
         "content": content,
+        "mode": mode,
         "created_at": datetime.now(timezone.utc),
     }

@@ -1,6 +1,6 @@
 # Soft Life Society 🌸
 
-A wellness and lifestyle app centered on **Luna Reyes**, a Dominican-inspired AI lifestyle coach. Part of the Soft Life Blueprint™ ecosystem (softlifesocietyai.com).
+A wellness and lifestyle app centered on **Luna Reyes**, a Dominican-inspired AI lifestyle coach. Part of the Soft Life Blueprint™ ecosystem (softlifesocietyai.com). Tagline: *"Become the woman you've been working toward."*
 
 ## Tech Stack
 
@@ -10,14 +10,16 @@ A wellness and lifestyle app centered on **Luna Reyes**, a Dominican-inspired AI
 
 ## Features
 
-- 🌸 **Luna** — chat-based AI coach persona
-- 📊 **Calorie counter** — daily food logging with a calorie goal
-- 💪 **Workout tracking** — log workouts, track your streak
-- 🍽️ **Meal plans** — curated, structured meal plan content
-- 🏆 **Challenges** — join and complete in-app challenges
-- 💛 **Community** — connect with friends & family, send encouragement
-- 🌙 **Light & dark mode** — full ivory/cream/blush/gold/rose/ink design system
-- 🌷 **7-day free trial** → monthly/annual subscription paywall
+- 🏠 **Home** — daily command center: greeting, Today's Focus, quick stats, a proactive AI meal suggestion, and a Challenges streak teaser
+- ✨ **Your AI (Luna Reyes)** — one chat-based coach with four modes: Life 🌸, Money 💰, Wellness 🍓, Goals 🎯 — context-aware of your nutrition/goals data
+- 🍽️ **Nourish AI** — calorie/macro ring dashboard, three ways to log food (📸 AI photo analysis, 🔎 search, ✍🏽 manual), and an AI meal builder
+- 🎯 **Goals** — Money/Wellness/Career/Personal categories with targets, progress, and milestones
+- 📋 **Routines** — customizable Morning/Night checklists that reset daily
+- 🏆 **Challenges** — 75/45/30-day templates with an intensity picker, fixed Water Intake & 10k Steps challenges, streaks, and a live Family & Friends leaderboard with shareable invite codes
+- 👤 **Me** — subscription management, Light/Dark/System appearance, and profile menu
+- 🌙 **Light, dark & system appearance** — blush/soft-pink/gold/black/cream palette with a matching dark palette, gold-gradient CTAs with a shimmer sweep
+- ✨ **Animated app-open sequence** — logo scale/fade on a gold-glow gradient, tagline settle-in, staggered Home card reveal
+- 🌷 **7-day free trial** → Free / $14.99 monthly / $99 annual paywall
 
 ## Project Structure
 
@@ -38,7 +40,7 @@ uvicorn app.main:app --reload
 
 The API runs at `http://localhost:8000` (docs at `/docs`). Requires a running MongoDB instance (local or Atlas) — set `MONGODB_URI` in `.env`.
 
-**Luna's replies:** set `ANTHROPIC_API_KEY` in `.env` to have Luna respond via the real Claude API (persona + conversation history, model configurable via `LUNA_MODEL`, defaults to `claude-opus-5`). Leave it unset and Luna falls back to built-in templated responses — no API calls, no cost, useful for local dev.
+**Luna & AI features:** set `ANTHROPIC_API_KEY` in `.env` to power Luna's chat (persona + mode + conversation history, model configurable via `LUNA_MODEL`, defaults to `claude-opus-5`), Nourish AI's meal-photo analysis, and the AI meal builder via the real Claude API. Leave it unset and these fall back to built-in templated/heuristic responses — no API calls, no cost, useful for local dev.
 
 ## Running the frontend
 
@@ -52,10 +54,11 @@ Update `extra.apiUrl` in `frontend/app.json` if your backend isn't at `http://lo
 
 ## Design System
 
-- **Palette:** ivory, cream, blush, gold, rose, ink (with a matching dark-mode palette)
-- **Typography:** Cormorant Garamond (display/headings), DM Sans (body)
+- **Palette:** Blush `#F6C8D8`, Soft Pink `#FCEEF3`, Gold `#D4AF37`, Black `#1A1A1A`, Cream `#FFF9F6` (dark: background `#111111`, cards `#1A1A1A` / `#242024`, text `#FFF9F6`, accents stay Blush + Gold)
+- **Gold gradient:** `#F6E2A0 → #D4AF37 → #A87A1F` (light) / `#F6E2A0 → #D4AF37 → #9C7A2E` (dark) — used on CTAs, progress bars/rings
+- **Typography:** Playfair Display (display/headings), Poppins (body/UI)
 - **Tokens:** `frontend/theme/tokens.ts`
 
 ## Status
 
-Core features are scaffolded and wired end-to-end (auth, trial/paywall, Luna chat, tracking, meal plans, challenges, community), and Luna is backed by the real Claude API when `ANTHROPIC_API_KEY` is set. Verified locally: a full backend API smoke test (auth, chat, nutrition, workouts, meal plans, challenges, social, subscriptions) and a browser walkthrough of the Expo web build (light/dark mode, signup → Luna chat → tracking). Next steps: payment provider integration (Stripe/RevenueCat) for real subscriptions, push notifications, and App Store assets/submission.
+All seven core screens are built and wired end-to-end against the backend, with Luna and Nourish AI backed by the real Claude API when `ANTHROPIC_API_KEY` is set. Verified locally: a full backend API smoke test (auth, 4-mode Luna chat, nutrition/macros, goals, routines, challenges, leaderboard, invites, subscriptions) and a full browser walkthrough of the Expo web build (animated intro, all 7 tabs, light/dark mode). Next steps: payment provider integration (Stripe/RevenueCat) for real billing, push notifications, and App Store assets/submission.

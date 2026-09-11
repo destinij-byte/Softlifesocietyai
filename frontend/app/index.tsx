@@ -20,9 +20,9 @@ export default function Index() {
     return <Redirect href="/(auth)/welcome" />;
   }
 
-  if (user.subscription_status === "expired") {
+  if (user.subscription_status === "expired" || user.subscription_status === "canceled") {
     return <Redirect href="/(auth)/paywall" />;
   }
 
-  return <Redirect href="/(tabs)/luna" />;
+  return <Redirect href="/(tabs)/home" />;
 }

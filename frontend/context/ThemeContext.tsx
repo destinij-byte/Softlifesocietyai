@@ -3,45 +3,54 @@ import { Appearance } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { darkTheme, lightTheme, Theme } from "@/theme/tokens";
 
-type ThemeMode = "light" | "dark";
+export type AppearancePreference = "light" | "dark" | "system";
+type ResolvedMode = "light" | "dark";
 
 type ThemeContextValue = {
   theme: Theme;
-  mode: ThemeMode;
-  toggleMode: () => void;
-  setMode: (mode: ThemeMode) => void;
+  mode: ResolvedMode;
+  preference: AppearancePreference;
+  setPreference: (preference: AppearancePreference) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "soft-life-theme-mode";
+const STORAGE_KEY = "soft-life-appearance-preference";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>(Appearance.getColorScheme() === "dark" ? "dark" : "light");
+  const [preference, setPreferenceState] = useState<AppearancePreference>("system");
+  const [systemScheme, setSystemScheme] = useState<ResolvedMode>(Appearance.getColorScheme() === "dark" ? "dark" : "light");
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored === "light" || stored === "dark") {
-        setModeState(stored);
+      if (stored === "light" || stored === "dark" || stored === "system") {
+        setPreferenceState(stored);
       }
     });
   }, []);
 
-  const setMode = (next: ThemeMode) => {
-    setModeState(next);
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setSystemScheme(colorScheme === "dark" ? "dark" : "light");
+    });
+    return () => subscription.remove();
+  }, []);
+
+  const setPreference = (next: AppearancePreference) => {
+    setPreferenceState(next);
     AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
   };
 
-  const toggleMode = () => setMode(mode === "light" ? "dark" : "light");
+  const mode: ResolvedMode = preference === "system" ? systemScheme : preference;
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme: mode === "dark" ? darkTheme : lightTheme,
       mode,
-      toggleMode,
-      setMode,
+      preference,
+      setPreference,
     }),
-    [mode]
+    [mode, preference]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

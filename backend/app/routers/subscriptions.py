@@ -10,8 +10,9 @@ from app.services.users import serialize_user
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 
 TIERS = {
-    "monthly": {"label": "Monthly", "price_usd": 19.99, "emoji": "🌙"},
-    "annual": {"label": "Annual", "price_usd": 149.99, "emoji": "✨"},
+    "free": {"label": "Free", "price_usd": 0.0, "emoji": "🤍"},
+    "monthly": {"label": "Monthly", "price_usd": 14.99, "emoji": "🌙"},
+    "annual": {"label": "Annual", "price_usd": 99.0, "emoji": "✨"},
 }
 
 
@@ -38,9 +39,11 @@ async def subscribe(
     if payload.tier not in TIERS:
         raise HTTPException(status_code=400, detail="Unknown subscription tier")
 
+    status = "free" if payload.tier == "free" else "active"
+    tier = None if payload.tier == "free" else payload.tier
     await db.users.update_one(
         {"_id": current_user["_id"]},
-        {"$set": {"subscription_status": "active", "subscription_tier": payload.tier}},
+        {"$set": {"subscription_status": status, "subscription_tier": tier}},
     )
     updated = await db.users.find_one({"_id": current_user["_id"]})
     return serialize_user(updated)

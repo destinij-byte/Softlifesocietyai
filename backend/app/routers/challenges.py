@@ -1,119 +1,170 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import BaseModel
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
 
 router = APIRouter(prefix="/challenges", tags=["challenges"])
 
-SEED_CHALLENGES = [
-    {
-        "slug": "hydration-week",
-        "title": "Hydration Week",
-        "emoji": "💧",
-        "description": "Drink 8 glasses of water a day, for 7 days straight.",
-        "duration_days": 7,
-    },
-    {
-        "slug": "morning-movement",
-        "title": "10-Day Morning Movement",
-        "emoji": "🌅",
-        "description": "10 minutes of gentle movement every morning for 10 days.",
-        "duration_days": 10,
-    },
-    {
-        "slug": "gratitude-glow",
-        "title": "Gratitude Glow-Up",
-        "emoji": "🌷",
-        "description": "Write down 3 things you're grateful for, every day for 5 days.",
-        "duration_days": 5,
-    },
-    {
-        "slug": "meal-prep-master",
-        "title": "Meal Prep Master",
-        "emoji": "🍱",
-        "description": "Prep at least one meal ahead of time, 3 times this week.",
-        "duration_days": 7,
-    },
+INTENSITIES = {
+    "hard": {"label": "Hard", "emoji": "🔥"},
+    "medium": {"label": "Medium", "emoji": "🌤"},
+    "easy": {"label": "Easy", "emoji": "🌱"},
+}
+
+TEMPLATES = [
+    {"slug": "75-day", "title": "75 Day Challenge", "emoji": "🏔️", "duration_days": 75, "needs_intensity": True},
+    {"slug": "45-day", "title": "45 Day Challenge", "emoji": "⛰️", "duration_days": 45, "needs_intensity": True},
+    {"slug": "30-day", "title": "30 Day Challenge", "emoji": "🌄", "duration_days": 30, "needs_intensity": True},
+    {"slug": "water-intake", "title": "Water Intake", "emoji": "💧", "duration_days": 9999, "needs_intensity": False, "description": "8 glasses of water a day."},
+    {"slug": "10k-steps", "title": "10,000 Steps Daily", "emoji": "🚶‍♀️", "duration_days": 9999, "needs_intensity": False, "description": "Hit 10,000 steps every day."},
 ]
 
 
-async def ensure_seed_challenges(db: AsyncIOMotorDatabase) -> None:
-    count = await db.challenges.count_documents({})
-    if count == 0:
-        await db.challenges.insert_many([dict(c) for c in SEED_CHALLENGES])
+class JoinRequest(BaseModel):
+    intensity: str | None = None
 
 
-@router.get("")
-async def list_challenges(
-    current_user: dict = Depends(get_current_user),
-    db: AsyncIOMotorDatabase = Depends(get_db),
-):
-    await ensure_seed_challenges(db)
-    challenges = await db.challenges.find({}).to_list(length=100)
+@router.get("/templates")
+async def list_templates():
+    return TEMPLATES
 
-    joined_cursor = db.challenge_participants.find({"user_id": str(current_user["_id"])})
-    joined = await joined_cursor.to_list(length=100)
-    joined_map = {j["challenge_slug"]: j for j in joined}
 
-    result = []
-    for c in challenges:
-        participation = joined_map.get(c["slug"])
-        result.append(
-            {
-                "slug": c["slug"],
-                "title": c["title"],
-                "emoji": c["emoji"],
-                "description": c["description"],
-                "duration_days": c["duration_days"],
-                "joined": participation is not None,
-                "completed": bool(participation and participation.get("completed")),
-                "participant_count": await db.challenge_participants.count_documents({"challenge_slug": c["slug"]}),
-            }
-        )
-    return result
+@router.get("/intensities")
+async def list_intensities():
+    return INTENSITIES
+
+
+def _template(slug: str) -> dict:
+    template = next((t for t in TEMPLATES if t["slug"] == slug), None)
+    if not template:
+        raise HTTPException(status_code=404, detail="Challenge template not found")
+    return template
 
 
 @router.post("/{slug}/join")
 async def join_challenge(
     slug: str,
+    payload: JoinRequest,
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    await ensure_seed_challenges(db)
-    challenge = await db.challenges.find_one({"slug": slug})
-    if not challenge:
-        raise HTTPException(status_code=404, detail="Challenge not found")
+    template = _template(slug)
+    if template["needs_intensity"] and payload.intensity not in INTENSITIES:
+        raise HTTPException(status_code=400, detail="This challenge needs an intensity: hard, medium, or easy")
 
     now = datetime.now(timezone.utc)
-    await db.challenge_participants.update_one(
-        {"user_id": str(current_user["_id"]), "challenge_slug": slug},
-        {
-            "$setOnInsert": {
-                "user_id": str(current_user["_id"]),
-                "challenge_slug": slug,
-                "joined_at": now,
-                "ends_at": now + timedelta(days=challenge["duration_days"]),
-                "completed": False,
-            }
-        },
-        upsert=True,
-    )
+    existing = await db.challenge_participants.find_one({"user_id": str(current_user["_id"]), "slug": slug, "active": True})
+    if existing:
+        raise HTTPException(status_code=409, detail="You're already doing this challenge")
+
+    doc = {
+        "user_id": str(current_user["_id"]),
+        "slug": slug,
+        "intensity": payload.intensity,
+        "joined_at": now,
+        "duration_days": template["duration_days"],
+        "log_dates": [],
+        "points": 0,
+        "streak": 0,
+        "active": True,
+    }
+    await db.challenge_participants.insert_one(doc)
     return {"joined": True, "slug": slug}
 
 
-@router.post("/{slug}/complete")
-async def complete_challenge(
+@router.get("/mine")
+async def my_challenges(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    participations = await db.challenge_participants.find(
+        {"user_id": str(current_user["_id"]), "active": True}
+    ).to_list(length=50)
+
+    result = []
+    today = date.today().isoformat()
+    for p in participations:
+        template = _template(p["slug"])
+        day_count = len(p.get("log_dates", []))
+        result.append(
+            {
+                "slug": p["slug"],
+                "title": template["title"],
+                "emoji": template["emoji"],
+                "intensity": p.get("intensity"),
+                "duration_days": p["duration_days"],
+                "day_count": day_count,
+                "streak": p.get("streak", 0),
+                "points": p.get("points", 0),
+                "logged_today": today in p.get("log_dates", []),
+                "progress": min(1.0, day_count / p["duration_days"]) if p["duration_days"] < 9999 else 0,
+            }
+        )
+    return result
+
+
+@router.post("/{slug}/log-today")
+async def log_today(
     slug: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    result = await db.challenge_participants.update_one(
-        {"user_id": str(current_user["_id"]), "challenge_slug": slug},
-        {"$set": {"completed": True, "completed_at": datetime.now(timezone.utc)}},
+    participation = await db.challenge_participants.find_one(
+        {"user_id": str(current_user["_id"]), "slug": slug, "active": True}
     )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="You haven't joined this challenge yet")
-    return {"completed": True, "slug": slug}
+    if not participation:
+        raise HTTPException(status_code=404, detail="You haven't joined this challenge")
+
+    today = date.today()
+    today_str = today.isoformat()
+    log_dates = participation.get("log_dates", [])
+    if today_str in log_dates:
+        raise HTTPException(status_code=409, detail="Already logged today")
+
+    log_dates.append(today_str)
+    yesterday_str = (today - timedelta(days=1)).isoformat()
+    streak = participation.get("streak", 0) + 1 if yesterday_str in log_dates else 1
+    points = participation.get("points", 0) + 10
+
+    await db.challenge_participants.update_one(
+        {"_id": participation["_id"]},
+        {"$set": {"log_dates": log_dates, "streak": streak, "points": points}},
+    )
+    return {"logged": True, "streak": streak, "points": points}
+
+
+@router.get("/leaderboard")
+async def leaderboard(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    friend_ids = current_user.get("friend_ids", [])
+    member_ids = [current_user["_id"]] + [ObjectId(fid) for fid in friend_ids]
+    members = await db.users.find({"_id": {"$in": member_ids}}).to_list(length=200)
+
+    rows = []
+    for member in members:
+        member_id = str(member["_id"])
+        participations = await db.challenge_participants.find({"user_id": member_id, "active": True}).to_list(length=50)
+        total_points = sum(p.get("points", 0) for p in participations)
+        best_streak = max((p.get("streak", 0) for p in participations), default=0)
+        rows.append(
+            {
+                "id": member_id,
+                "name": member["name"],
+                "avatar_emoji": member.get("avatar_emoji", "🌸"),
+                "points": total_points,
+                "streak": best_streak,
+                "is_you": member_id == str(current_user["_id"]),
+            }
+        )
+
+    rows.sort(key=lambda r: (-r["points"], -r["streak"]))
+    for i, row in enumerate(rows):
+        row["rank"] = i + 1
+    return rows

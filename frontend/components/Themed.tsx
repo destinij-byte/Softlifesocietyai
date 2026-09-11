@@ -3,7 +3,7 @@ import { Text as RNText, TextProps, View as RNView, ViewProps } from "react-nati
 import { useAppTheme } from "@/context/ThemeContext";
 import { typography } from "@/theme/tokens";
 
-export function Card({ style, ...rest }: ViewProps) {
+export function Card({ style, accent, ...rest }: ViewProps & { accent?: boolean }) {
   const { theme } = useAppTheme();
   return (
     <RNView
@@ -14,6 +14,7 @@ export function Card({ style, ...rest }: ViewProps) {
           padding: 16,
           borderWidth: 1,
           borderColor: theme.border,
+          ...(accent ? { borderLeftWidth: 4, borderLeftColor: theme.accent } : {}),
         },
         style,
       ]}

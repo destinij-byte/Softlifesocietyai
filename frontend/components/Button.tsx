@@ -1,5 +1,6 @@
-import React from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme } from "@/context/ThemeContext";
 import { radii, spacing, typography } from "@/theme/tokens";
 
@@ -14,10 +15,45 @@ type ButtonProps = {
 
 export function Button({ label, emoji, onPress, variant = "primary", loading, disabled }: ButtonProps) {
   const { theme } = useAppTheme();
+  const shimmer = useRef(new Animated.Value(0)).current;
 
-  const backgroundColor =
-    variant === "primary" ? theme.primary : variant === "secondary" ? theme.surfaceAlt : "transparent";
-  const textColor = variant === "primary" ? "#FFFFFF" : theme.text;
+  useEffect(() => {
+    if (variant !== "primary") return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [variant, shimmer]);
+
+  const shimmerTranslate = shimmer.interpolate({ inputRange: [0, 1], outputRange: [-140, 220] });
+
+  if (variant === "primary") {
+    return (
+      <Pressable onPress={onPress} disabled={disabled || loading} style={{ opacity: disabled ? 0.5 : 1 }}>
+        <LinearGradient colors={theme.goldGradient as [string, string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.base}>
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.shimmer, { transform: [{ translateX: shimmerTranslate }, { rotate: "20deg" }] }]}
+          />
+          {loading ? (
+            <ActivityIndicator color="#1A1A1A" />
+          ) : (
+            <Text style={[styles.label, { color: "#1A1A1A" }]}>
+              {emoji ? `${emoji} ` : ""}
+              {label}
+            </Text>
+          )}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
+  const backgroundColor = variant === "secondary" ? theme.surfaceAlt : "transparent";
+  const textColor = theme.text;
   const borderColor = variant === "ghost" ? theme.border : "transparent";
 
   return (
@@ -53,9 +89,17 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   label: {
     fontFamily: typography.bodyBold,
     fontSize: 16,
+  },
+  shimmer: {
+    position: "absolute",
+    top: -40,
+    bottom: -40,
+    width: 60,
+    backgroundColor: "rgba(255,255,255,0.35)",
   },
 });

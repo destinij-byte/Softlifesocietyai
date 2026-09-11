@@ -17,8 +17,9 @@ def serialize_user(user: dict) -> UserOut:
 
 
 def subscription_status(user: dict) -> str:
-    if user.get("subscription_status") == "active":
-        return "active"
+    stored_status = user.get("subscription_status")
+    if stored_status in ("active", "free"):
+        return stored_status
     trial_ends_at = user["trial_ends_at"]
     if trial_ends_at.tzinfo is None:
         trial_ends_at = trial_ends_at.replace(tzinfo=timezone.utc)
