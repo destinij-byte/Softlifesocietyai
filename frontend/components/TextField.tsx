@@ -3,7 +3,7 @@ import { StyleSheet, TextInput, TextInputProps } from "react-native";
 import { useAppTheme } from "@/context/ThemeContext";
 import { radii, spacing, typography } from "@/theme/tokens";
 
-export function TextField(props: TextInputProps) {
+export function TextField({ style, ...rest }: TextInputProps) {
   const { theme } = useAppTheme();
   return (
     <TextInput
@@ -15,8 +15,9 @@ export function TextField(props: TextInputProps) {
           borderColor: theme.border,
           color: theme.text,
         },
+        style,
       ]}
-      {...props}
+      {...rest}
     />
   );
 }

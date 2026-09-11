@@ -57,7 +57,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   return response.json() as Promise<T>;
 }
 
-export async function apiUpload<T>(path: string, fileUri: string, fieldName = "photo"): Promise<T> {
+export async function apiUpload<T>(
+  path: string,
+  fileUri: string,
+  fieldName = "photo",
+  extraFields?: Record<string, string>
+): Promise<T> {
   const token = await getToken();
   const headers: Record<string, string> = {};
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -69,6 +74,9 @@ export async function apiUpload<T>(path: string, fileUri: string, fieldName = "p
 
   const formData = new FormData();
   formData.append(fieldName, { uri: fileUri, name: filename, type: mimeType } as unknown as Blob);
+  if (extraFields) {
+    Object.entries(extraFields).forEach(([key, value]) => formData.append(key, value));
+  }
 
   const response = await fetch(`${API_URL}${path}`, { method: "POST", headers, body: formData });
 

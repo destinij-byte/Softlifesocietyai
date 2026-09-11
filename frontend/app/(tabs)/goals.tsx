@@ -6,9 +6,10 @@ import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/TextField";
 import { ProgressBar } from "@/components/ProgressBar";
+import { VisionBoard } from "@/components/VisionBoard";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
-import { Goal } from "@/services/types";
+import { Goal, GoalTimeframe } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
 const CATEGORIES: { key: Goal["category"]; label: string; emoji: string }[] = [
@@ -18,11 +19,18 @@ const CATEGORIES: { key: Goal["category"]; label: string; emoji: string }[] = [
   { key: "personal", label: "Personal", emoji: "✨" },
 ];
 
+const TIMEFRAMES: { key: GoalTimeframe; label: string; emoji: string }[] = [
+  { key: "none", label: "No timeframe", emoji: "🎯" },
+  { key: "quarterly", label: "Quarterly", emoji: "🗓️" },
+  { key: "long_term", label: "Long-term", emoji: "🌠" },
+];
+
 export default function Goals() {
   const { theme } = useAppTheme();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [creating, setCreating] = useState(false);
   const [category, setCategory] = useState<Goal["category"]>("personal");
+  const [timeframe, setTimeframe] = useState<GoalTimeframe>("none");
   const [title, setTitle] = useState("");
   const [target, setTarget] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,14 +52,22 @@ export default function Goals() {
     setBusy(true);
     try {
       const emoji = CATEGORIES.find((c) => c.key === category)?.emoji ?? "🎯";
-      await apiRequest("/goals", { method: "POST", body: { title: title.trim(), category, target: target.trim(), emoji } });
+      await apiRequest("/goals", {
+        method: "POST",
+        body: { title: title.trim(), category, target: target.trim(), emoji, timeframe },
+      });
       setTitle("");
       setTarget("");
+      setTimeframe("none");
       setCreating(false);
       await load();
     } finally {
       setBusy(false);
     }
+  };
+
+  const updateGoalInState = (updated: Goal) => {
+    setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
   };
 
   const bumpProgress = async (goal: Goal, delta: number) => {
@@ -75,7 +91,7 @@ export default function Goals() {
 
   return (
     <Screen>
-      <Title>🎯 Goals</Title>
+      <Title>Goals</Title>
       <Muted>Money, Wellness, Career, Personal — broken into small steps.</Muted>
 
       {creating ? (
@@ -94,6 +110,20 @@ export default function Goals() {
           </View>
           <TextField placeholder="Goal title" value={title} onChangeText={setTitle} />
           <TextField placeholder="Target (e.g. Save $5,000)" value={target} onChangeText={setTarget} />
+
+          <Muted>Timeframe (unlocks a vision board)</Muted>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+            {TIMEFRAMES.map((t) => (
+              <Button
+                key={t.key}
+                label={t.label}
+                emoji={t.emoji}
+                variant={timeframe === t.key ? "primary" : "secondary"}
+                onPress={() => setTimeframe(t.key)}
+              />
+            ))}
+          </View>
+
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
             <Button label="Create" emoji="✨" onPress={createGoal} loading={busy} disabled={!title || !target} />
             <Button label="Cancel" variant="ghost" onPress={() => setCreating(false)} />
@@ -117,6 +147,9 @@ export default function Goals() {
                   {goal.emoji} {goal.title}
                 </Subtitle>
                 <Body style={{ color: theme.textMuted }}>{goal.target}</Body>
+                {goal.timeframe !== "none" && (
+                  <Muted>{TIMEFRAMES.find((t) => t.key === goal.timeframe)?.emoji} {TIMEFRAMES.find((t) => t.key === goal.timeframe)?.label} goal</Muted>
+                )}
                 <ProgressBar progress={goal.progress} />
                 <View style={{ flexDirection: "row", gap: spacing.sm }}>
                   <Button label="-10%" variant="secondary" onPress={() => bumpProgress(goal, -0.1)} />
@@ -138,6 +171,8 @@ export default function Goals() {
                   </View>
                   <Button label="Add" variant="secondary" onPress={() => addMilestone(goal)} />
                 </View>
+
+                {goal.timeframe !== "none" && <VisionBoard goal={goal} onChange={updateGoalInState} />}
               </Card>
             ))}
           </View>

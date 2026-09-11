@@ -13,11 +13,12 @@ A wellness and lifestyle app centered on **Luna Reyes**, a Dominican-inspired AI
 - 🏠 **Home** — daily command center: greeting, Today's Focus, quick stats, a proactive AI meal suggestion, and a Challenges streak teaser
 - ✨ **Your AI (Luna Reyes)** — one chat-based coach with four modes: Life 🌸, Money 💰, Wellness 🍓, Goals 🎯 — context-aware of your nutrition/goals data
 - 🍽️ **Nourish AI** — calorie/macro ring dashboard, three ways to log food (📸 AI photo analysis, 🔎 search, ✍🏽 manual), and an AI meal builder
-- 🎯 **Goals** — Money/Wellness/Career/Personal categories with targets, progress, and milestones
-- 📋 **Routines** — customizable Morning/Night checklists that reset daily
+- 🎯 **Goals** — Money/Wellness/Career/Personal categories with targets, progress, milestones, an optional Quarterly/Long-Term timeframe, and a photo **Vision Board** per goal
+- 📋 **Routines** — customizable Morning/Night checklists that reset daily, each paired with a daily affirmation, manifestation journal prompt, and custom affirmations
 - 🏆 **Challenges** — 75/45/30-day templates with an intensity picker, fixed Water Intake & 10k Steps challenges, streaks, and a live Family & Friends leaderboard with shareable invite codes
 - 👤 **Me** — subscription management, Light/Dark/System appearance, and profile menu
 - 🌙 **Light, dark & system appearance** — blush/soft-pink/gold/black/cream palette with a matching dark palette, gold-gradient CTAs with a shimmer sweep
+- A single custom line-icon system (`components/Icon.tsx`) across the tab bar and menus, in place of emoji-only icons
 - ✨ **Animated app-open sequence** — logo scale/fade on a gold-glow gradient, tagline settle-in, staggered Home card reveal
 - 🌷 **7-day free trial** → Free / $14.99 monthly / $99 annual paywall
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme } from "@/context/ThemeContext";
 import { radii, spacing, typography } from "@/theme/tokens";
@@ -7,13 +7,14 @@ import { radii, spacing, typography } from "@/theme/tokens";
 type ButtonProps = {
   label: string;
   emoji?: string;
+  icon?: React.ReactNode;
   onPress: () => void;
   variant?: "primary" | "secondary" | "ghost";
   loading?: boolean;
   disabled?: boolean;
 };
 
-export function Button({ label, emoji, onPress, variant = "primary", loading, disabled }: ButtonProps) {
+export function Button({ label, emoji, icon, onPress, variant = "primary", loading, disabled }: ButtonProps) {
   const { theme } = useAppTheme();
   const shimmer = useRef(new Animated.Value(0)).current;
 
@@ -42,10 +43,13 @@ export function Button({ label, emoji, onPress, variant = "primary", loading, di
           {loading ? (
             <ActivityIndicator color="#1A1A1A" />
           ) : (
-            <Text style={[styles.label, { color: "#1A1A1A" }]}>
-              {emoji ? `${emoji} ` : ""}
-              {label}
-            </Text>
+            <View style={styles.content}>
+              {icon}
+              <Text style={[styles.label, { color: "#1A1A1A" }]}>
+                {emoji ? `${emoji} ` : ""}
+                {label}
+              </Text>
+            </View>
           )}
         </LinearGradient>
       </Pressable>
@@ -73,16 +77,24 @@ export function Button({ label, emoji, onPress, variant = "primary", loading, di
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : (
-        <Text style={[styles.label, { color: textColor }]}>
-          {emoji ? `${emoji} ` : ""}
-          {label}
-        </Text>
+        <View style={styles.content}>
+          {icon}
+          <Text style={[styles.label, { color: textColor }]}>
+            {emoji ? `${emoji} ` : ""}
+            {label}
+          </Text>
+        </View>
       )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   base: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,

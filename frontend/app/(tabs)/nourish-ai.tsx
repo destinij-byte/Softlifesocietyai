@@ -122,7 +122,7 @@ export default function NourishAI() {
 
   return (
     <Screen>
-      <Title>🍽️ Nourish AI</Title>
+      <Title>Nourish AI</Title>
 
       <Card style={{ alignItems: "center", gap: spacing.sm }}>
         <ProgressRing progress={summary.total_calories / summary.goal_calories} size={160}>

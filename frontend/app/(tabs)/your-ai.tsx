@@ -52,7 +52,7 @@ export default function YourAI() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.header}>
-          <Title>✨ Your AI</Title>
+          <Title>Your AI</Title>
           <Muted>Luna Reyes, however you need her today</Muted>
         </View>
 

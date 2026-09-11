@@ -65,6 +65,15 @@ export type MealSuggestion = FoodResult & {
 
 export type Milestone = { id: string; title: string; done: boolean };
 
+export type GoalTimeframe = "none" | "quarterly" | "long_term";
+
+export type VisionImage = {
+  id: string;
+  image: string;
+  caption: string | null;
+  created_at: string;
+};
+
 export type Goal = {
   id: string;
   title: string;
@@ -72,8 +81,10 @@ export type Goal = {
   target: string;
   deadline: string | null;
   emoji: string;
+  timeframe: GoalTimeframe;
   progress: number;
   milestones: Milestone[];
+  vision_images: VisionImage[];
   created_at: string;
 };
 
@@ -120,4 +131,14 @@ export type Friend = {
   id: string;
   name: string;
   avatar_emoji: string;
+};
+
+export type CustomAffirmation = { id: string; text: string };
+
+export type AffirmationState = {
+  type: "morning" | "night";
+  daily_affirmation: string;
+  manifestation_prompt: string;
+  custom: CustomAffirmation[];
+  journal_entry: string;
 };

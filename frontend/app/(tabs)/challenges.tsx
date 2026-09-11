@@ -94,7 +94,7 @@ export default function Challenges() {
 
   return (
     <Screen>
-      <Title>🏆 Challenges</Title>
+      <Title>Challenges</Title>
 
       {mine.length > 0 && (
         <View style={{ gap: spacing.sm }}>

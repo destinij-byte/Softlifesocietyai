@@ -1,9 +1,9 @@
 import React from "react";
 import { Text as RNText, TextProps, View as RNView, ViewProps } from "react-native";
 import { useAppTheme } from "@/context/ThemeContext";
-import { typography } from "@/theme/tokens";
+import { elevation, typography } from "@/theme/tokens";
 
-export function Card({ style, accent, ...rest }: ViewProps & { accent?: boolean }) {
+export function Card({ style, accent, elevated, ...rest }: ViewProps & { accent?: boolean; elevated?: boolean }) {
   const { theme } = useAppTheme();
   return (
     <RNView
@@ -15,6 +15,7 @@ export function Card({ style, accent, ...rest }: ViewProps & { accent?: boolean 
           borderWidth: 1,
           borderColor: theme.border,
           ...(accent ? { borderLeftWidth: 4, borderLeftColor: theme.accent } : {}),
+          ...(elevated ? { ...elevation.soft, borderWidth: 0 } : {}),
         },
         style,
       ]}

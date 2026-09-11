@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, challenges, goals, luna, nutrition, routines, social, subscriptions
+from app.routers import affirmations, auth, challenges, goals, luna, nutrition, routines, social, subscriptions
 
 app = FastAPI(title="Soft Life Society API", version="0.2.0")
 
@@ -18,6 +18,7 @@ app.include_router(luna.router)
 app.include_router(nutrition.router)
 app.include_router(goals.router)
 app.include_router(routines.router)
+app.include_router(affirmations.router)
 app.include_router(challenges.router)
 app.include_router(social.router)
 app.include_router(subscriptions.router)

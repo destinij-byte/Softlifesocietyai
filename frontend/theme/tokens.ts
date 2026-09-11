@@ -86,3 +86,22 @@ export const radii = {
   lg: 24,
   pill: 999,
 };
+
+// Soft, dimensional shadows used sparingly on hero/accent surfaces so the app
+// reads as editorial-flat most of the time, with a little lift where it counts.
+export const elevation = {
+  soft: {
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  lifted: {
+    shadowColor: "#000",
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 7,
+  },
+};
