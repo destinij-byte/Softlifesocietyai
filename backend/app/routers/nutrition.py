@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
+from app.schemas.nutrition import MealSuggestionOut
 from app.services.food_database import search_foods
 from app.services.nourish_ai import analyze_meal_photo, build_meal_suggestion
 
@@ -55,15 +56,10 @@ class FoodResult(BaseModel):
     emoji: str
 
 
-class MealSuggestion(BaseModel):
-    name: str
-    calories: int
-    protein_g: float
-    carbs_g: float
-    fat_g: float
-    emoji: str
-    description: str | None = None
-    note: str | None = None
+# Every AI-generated meal is validated against this same schema (bounded,
+# non-negative fields) at the point it's generated in nourish_ai.py — this
+# reuse just gives FastAPI's response_model the identical shape.
+MealSuggestion = MealSuggestionOut
 
 
 def _goal(user: dict) -> dict:
