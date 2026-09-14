@@ -45,3 +45,14 @@ async def ensure_indexes(db: AsyncIOMotorDatabase | None = None) -> None:
 
     await db.challenge_participants.create_index([("user_id", 1), ("slug", 1)])
     await db.challenge_participants.create_index([("user_id", 1), ("active", 1)])
+
+    await db.login_attempts.create_index("email", unique=True)
+    await db.password_resets.create_index("token_hash", unique=True)
+    try:
+        # TTL indexes aren't meaningfully enforced by mongomock in tests, but are
+        # real cleanup against a real MongoDB — best-effort so a test backend
+        # that rejects the option doesn't block startup.
+        await db.password_resets.create_index("expires_at", expireAfterSeconds=0)
+        await db.token_denylist.create_index("expires_at", expireAfterSeconds=0)
+    except Exception:
+        pass

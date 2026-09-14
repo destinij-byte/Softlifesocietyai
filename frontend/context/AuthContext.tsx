@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { apiRequest, getToken, setToken } from "@/services/api";
+import { apiRequest, getToken, setToken, setUnauthorizedHandler } from "@/services/api";
 import { AuthResponse, User } from "@/services/types";
 
 type AuthContextValue = {
@@ -35,6 +35,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     bootstrap();
+    // A 401 anywhere in the app (expired/revoked token) should drop the user
+    // back to the auth flow, not just silently fail the one request.
+    setUnauthorizedHandler(() => setUser(null));
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const handleAuthResponse = async (res: AuthResponse) => {
@@ -61,6 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logOut = async () => {
+    try {
+      await apiRequest("/auth/logout", { method: "POST" });
+    } catch {
+      // Best-effort server-side revocation — clear the local session either way.
+    }
     await setToken(null);
     setUser(null);
   };

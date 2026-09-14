@@ -1,7 +1,8 @@
 import React from "react";
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { View } from "react-native";
 import { Icon, IconName } from "@/components/Icon";
+import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/context/ThemeContext";
 import { elevation, radii } from "@/theme/tokens";
 
@@ -29,6 +30,14 @@ function TabIcon({ name, color, focused }: { name: IconName; color: string; focu
 
 export default function TabsLayout() {
   const { theme } = useAppTheme();
+  const { user, isLoading } = useAuth();
+
+  // Logging out (or a 401 forcing one) clears `user` while we're still deep
+  // in the tab stack — without this, the tabs stay mounted and every screen
+  // just renders blank (`if (!user) return null`) instead of returning to auth.
+  if (!isLoading && !user) {
+    return <Redirect href="/(auth)/welcome" />;
+  }
 
   return (
     <Tabs
