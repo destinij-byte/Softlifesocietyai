@@ -86,3 +86,51 @@ async def test_memory_is_cross_user_scoped(client):
 
     listed_a = await client.get("/luna/memory", headers=headers_a)
     assert len(listed_a.json()) == 1
+
+
+def test_generate_breakdown_action_is_allowed_when_well_formed():
+    from app.schemas.luna import validate_actions
+
+    raw = [
+        {
+            "type": "generate_breakdown",
+            "label": "Add these steps",
+            "payload": {
+                "goal_title": "Save $1000",
+                "steps": [
+                    {"period": "monthly", "label": "Save $250/month", "target": 250},
+                    {"period": "today", "label": "Move $10 to savings", "target": 10},
+                ],
+            },
+        }
+    ]
+    validated = validate_actions(raw)
+    assert len(validated) == 1
+    assert validated[0].type == "generate_breakdown"
+
+
+def test_generate_breakdown_action_is_dropped_when_period_is_invalid():
+    from app.schemas.luna import validate_actions
+
+    raw = [
+        {
+            "type": "generate_breakdown",
+            "label": "Add these steps",
+            "payload": {"goal_title": "Save $1000", "steps": [{"period": "yearly", "label": "bad period"}]},
+        }
+    ]
+    assert validate_actions(raw) == []
+
+
+def test_generate_breakdown_action_is_dropped_when_steps_missing():
+    from app.schemas.luna import validate_actions
+
+    raw = [{"type": "generate_breakdown", "label": "Add these steps", "payload": {"goal_title": "Save $1000"}}]
+    assert validate_actions(raw) == []
+
+
+def test_unknown_action_type_is_dropped():
+    from app.schemas.luna import validate_actions
+
+    raw = [{"type": "delete_everything", "label": "Do something scary", "payload": {}}]
+    assert validate_actions(raw) == []
