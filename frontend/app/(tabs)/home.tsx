@@ -6,6 +6,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
+import { LunaAvatar } from "@/components/LunaAvatar";
 import { ProgressRing } from "@/components/ProgressRing";
 import { StaggerIn } from "@/components/StaggerIn";
 import { useAuth } from "@/context/AuthContext";
@@ -214,8 +215,8 @@ export default function Home() {
 
       <StaggerIn index={4}>
         <Card style={{ backgroundColor: theme.mode === "dark" ? theme.surfaceAlt : "#1A1A1A", gap: spacing.sm }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-            <Icon name="sparkle" size={14} color={theme.primary} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <LunaAvatar size={28} />
             <Subtitle style={{ fontSize: 13, color: theme.primary }}>LUNA</Subtitle>
           </View>
           <Body style={{ color: "#FFF9F6" }}>

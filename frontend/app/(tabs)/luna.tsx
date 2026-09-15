@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Body, Muted, Title } from "@/components/Themed";
 import { TextField } from "@/components/TextField";
 import { Button } from "@/components/Button";
+import { LunaAvatar } from "@/components/LunaAvatar";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
 import { ChatMessage, Goal, LunaAction, LunaMode } from "@/services/types";
@@ -88,9 +89,12 @@ export default function YourAI() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.header}>
-          <Title>Your AI</Title>
-          <Muted>Luna Reyes, however you need her today</Muted>
+        <View style={[styles.header, { flexDirection: "row", alignItems: "center", gap: spacing.sm }]}>
+          <LunaAvatar size={44} />
+          <View>
+            <Title>Luna</Title>
+            <Muted>Luna Reyes, however you need her today</Muted>
+          </View>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modeScroll} contentContainerStyle={styles.modeRow}>

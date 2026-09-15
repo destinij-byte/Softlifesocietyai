@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { Screen } from "@/components/Screen";
 import { Body, Muted } from "@/components/Themed";
 import { Button } from "@/components/Button";
+import { LunaAvatar } from "@/components/LunaAvatar";
 import { useAppTheme } from "@/context/ThemeContext";
 import { spacing } from "@/theme/tokens";
 
@@ -23,9 +24,12 @@ export default function Welcome() {
         <Body style={{ textAlign: "center", fontStyle: "italic", color: theme.text, fontSize: 17 }}>
           Become the woman you're becoming.
         </Body>
-        <Body style={{ textAlign: "center", color: theme.textMuted, marginTop: spacing.xs, maxWidth: 280 }}>
-          Meet Luna Reyes — your AI lifestyle coach, here to help you plan your life, glow daily, and become her.
-        </Body>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm, maxWidth: 300 }}>
+          <LunaAvatar size={40} />
+          <Body style={{ flex: 1, color: theme.textMuted }}>
+            Meet Luna Reyes — your AI lifestyle coach, here to help you plan your life, glow daily, and become her.
+          </Body>
+        </View>
       </View>
 
       <View style={{ gap: spacing.md }}>
