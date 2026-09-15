@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme } from "@/context/ThemeContext";
 import { radii, spacing, typography } from "@/theme/tokens";
 
@@ -34,24 +33,26 @@ export function Button({ label, emoji, icon, onPress, variant = "primary", loadi
 
   if (variant === "primary") {
     return (
-      <Pressable onPress={onPress} disabled={disabled || loading} style={{ opacity: disabled ? 0.5 : 1 }}>
-        <LinearGradient colors={theme.goldGradient as [string, string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.base}>
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.shimmer, { transform: [{ translateX: shimmerTranslate }, { rotate: "20deg" }] }]}
-          />
-          {loading ? (
-            <ActivityIndicator color="#1A1A1A" />
-          ) : (
-            <View style={styles.content}>
-              {icon}
-              <Text style={[styles.label, { color: "#1A1A1A" }]}>
-                {emoji ? `${emoji} ` : ""}
-                {label}
-              </Text>
-            </View>
-          )}
-        </LinearGradient>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={[styles.base, { backgroundColor: "#1A1A1A", borderWidth: 1, borderColor: theme.primary, opacity: disabled ? 0.5 : 1 }]}
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.shimmer, { backgroundColor: "rgba(212,175,55,0.18)" }, { transform: [{ translateX: shimmerTranslate }, { rotate: "20deg" }] }]}
+        />
+        {loading ? (
+          <ActivityIndicator color={theme.primary} />
+        ) : (
+          <View style={styles.content}>
+            {icon}
+            <Text style={[styles.label, { color: theme.primary }]}>
+              {emoji ? `${emoji} ` : ""}
+              {label}
+            </Text>
+          </View>
+        )}
       </Pressable>
     );
   }

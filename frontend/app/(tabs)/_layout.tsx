@@ -4,21 +4,18 @@ import { View } from "react-native";
 import { Icon, IconName } from "@/components/Icon";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/context/ThemeContext";
-import { elevation, radii } from "@/theme/tokens";
+import { radii } from "@/theme/tokens";
 
 function TabIcon({ name, color, focused }: { name: IconName; color: string; focused: boolean }) {
-  const { theme } = useAppTheme();
   return (
     <View
       style={
         focused
           ? {
-              backgroundColor: theme.mode === "dark" ? "rgba(212,175,55,0.16)" : "rgba(212,175,55,0.14)",
+              backgroundColor: "rgba(212,175,55,0.16)",
               borderRadius: radii.md,
               paddingHorizontal: 12,
               paddingVertical: 5,
-              ...elevation.soft,
-              shadowOpacity: theme.mode === "dark" ? 0 : 0.06,
             }
           : { paddingHorizontal: 12, paddingVertical: 5 }
       }
@@ -44,8 +41,8 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textMuted,
-        tabBarStyle: { backgroundColor: theme.surface, borderTopColor: theme.border },
+        tabBarInactiveTintColor: theme.tabBarInactive,
+        tabBarStyle: { backgroundColor: theme.tabBarBackground, borderTopColor: "rgba(212,175,55,0.14)" },
         tabBarLabelStyle: { fontSize: 10 },
         tabBarShowLabel: true,
       }}

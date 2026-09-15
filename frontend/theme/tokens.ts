@@ -30,12 +30,18 @@ export type Theme = {
   success: string;
   danger: string;
   goldGradient: string[];
+  // The bottom nav is a deliberate departure from the content surfaces —
+  // always a near-black bar with gold accents, in both themes. It's the one
+  // piece of chrome that stays constant so it reads as a signature, not
+  // just "whatever the current theme's surface color is."
+  tabBarBackground: string;
+  tabBarInactive: string;
 };
 
 export const lightTheme: Theme = {
   mode: "light",
   background: palette.cream,
-  surface: palette.softPink,
+  surface: "#FFFFFF",
   surfaceAlt: palette.blush,
   primary: palette.gold,
   accent: palette.gold,
@@ -45,6 +51,8 @@ export const lightTheme: Theme = {
   success: "#7BA98A",
   danger: "#C4665A",
   goldGradient: goldGradientLight,
+  tabBarBackground: palette.black,
+  tabBarInactive: "#8A8286",
 };
 
 export const darkTheme: Theme = {
@@ -60,6 +68,8 @@ export const darkTheme: Theme = {
   success: "#8FC7A0",
   danger: "#E08A7D",
   goldGradient: goldGradientDark,
+  tabBarBackground: "#0D0D0D",
+  tabBarInactive: "#8A8286",
 };
 
 export const typography = {
