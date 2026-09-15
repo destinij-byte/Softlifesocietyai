@@ -55,8 +55,8 @@ export default function TabsLayout() {
         options={{ title: "Home", tabBarIcon: ({ color, focused }) => <TabIcon name="home" color={color} focused={focused} /> }}
       />
       <Tabs.Screen
-        name="your-ai"
-        options={{ title: "Your AI", tabBarIcon: ({ color, focused }) => <TabIcon name="sparkle" color={color} focused={focused} /> }}
+        name="luna"
+        options={{ title: "Luna", tabBarIcon: ({ color, focused }) => <TabIcon name="sparkle" color={color} focused={focused} /> }}
       />
       <Tabs.Screen
         name="nourish-ai"
@@ -67,17 +67,14 @@ export default function TabsLayout() {
         options={{ title: "Goals", tabBarIcon: ({ color, focused }) => <TabIcon name="target" color={color} focused={focused} /> }}
       />
       <Tabs.Screen
-        name="routines"
-        options={{ title: "Routines", tabBarIcon: ({ color, focused }) => <TabIcon name="checklist" color={color} focused={focused} /> }}
+        name="you"
+        options={{ title: "You", tabBarIcon: ({ color, focused }) => <TabIcon name="person" color={color} focused={focused} /> }}
       />
-      <Tabs.Screen
-        name="challenges"
-        options={{ title: "Wins", tabBarIcon: ({ color, focused }) => <TabIcon name="trophy" color={color} focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="me"
-        options={{ title: "Me", tabBarIcon: ({ color, focused }) => <TabIcon name="person" color={color} focused={focused} /> }}
-      />
+      {/* Routines and Wins are still full screens (reachable from Home's
+          "Today's Ritual" and Goals' Wins link) — href:null keeps them out
+          of the tab bar without removing the route or the feature. */}
+      <Tabs.Screen name="routines" options={{ href: null }} />
+      <Tabs.Screen name="challenges" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -34,14 +34,16 @@ function trialDaySummary(user: { trial_started_at: string; trial_ends_at: string
   return `Free trial · Day ${elapsed} of ${totalDays}`;
 }
 
-export default function Me() {
+export default function You() {
   const { user, logOut } = useAuth();
   const { theme, preference, setPreference } = useAppTheme();
 
   if (!user) return null;
 
   const menuItems: MenuItem[] = [
+    { label: "My Blueprint", icon: "sparkle", onPress: () => router.push("/(onboarding)/blueprint") },
     { label: "Goals", icon: "target", onPress: () => router.push("/(tabs)/goals") },
+    { label: "Wins", icon: "trophy", onPress: () => router.push("/(tabs)/challenges") },
     { label: "Routines", icon: "checklist", onPress: () => router.push("/(tabs)/routines") },
     { label: "Nutrition preferences", icon: "plate", onPress: () => router.push("/(tabs)/nourish-ai") },
     { label: "Subscription", icon: "sparkle", onPress: () => router.push("/(auth)/paywall") },

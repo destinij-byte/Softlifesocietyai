@@ -47,6 +47,7 @@ _USER_OWNED_COLLECTIONS = (
     "challenge_participants",
     "luna_memories",
     "blueprints",
+    "moods",
 )
 
 
