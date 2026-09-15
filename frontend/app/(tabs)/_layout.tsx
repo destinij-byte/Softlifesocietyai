@@ -72,6 +72,7 @@ export default function TabsLayout() {
           of the tab bar without removing the route or the feature. */}
       <Tabs.Screen name="routines" options={{ href: null }} />
       <Tabs.Screen name="challenges" options={{ href: null }} />
+      <Tabs.Screen name="night-reset" options={{ href: null }} />
     </Tabs>
   );
 }

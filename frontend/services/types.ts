@@ -171,6 +171,27 @@ export type HomeContext = {
   era_label: string | null;
   becoming: string;
   top_pillars: { pillar: Pillar; label: string; emoji: string }[];
+  yesterday_focus: string | null;
+};
+
+export type DaySnapshot = {
+  log_date: string;
+  calories_logged: number;
+  calories_goal: number;
+  water_count: number;
+  water_goal: number;
+  ritual_done: number;
+  ritual_total: number;
+  mood: string | null;
+};
+
+export type NightCheckin = {
+  log_date: string;
+  completed: boolean;
+  win: string;
+  gratitude: string;
+  tomorrow_focus: string;
+  day_summary: DaySnapshot;
 };
 
 export type CustomAffirmation = { id: string; text: string };

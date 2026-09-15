@@ -48,6 +48,7 @@ _USER_OWNED_COLLECTIONS = (
     "luna_memories",
     "blueprints",
     "moods",
+    "daily_checkins",
 )
 
 

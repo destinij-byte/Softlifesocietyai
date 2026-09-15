@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -40,6 +40,7 @@ class HomeContextOut(BaseModel):
     era_label: str | None
     becoming: str
     top_pillars: list[PillarOut]
+    yesterday_focus: str | None = None
 
 
 @router.get("/context", response_model=HomeContextOut)
@@ -47,14 +48,21 @@ async def get_home_context(
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """What Home reads to stay era-aware — an era banner and a priority order
-    for its tiles — without Home querying the Blueprint collection itself."""
+    """What Home reads to stay era-aware — an era banner, a priority order
+    for its tiles, and last night's Night Reset focus — without Home querying
+    the Blueprint or Night Reset collections directly."""
     ctx = await get_blueprint_context(db, str(current_user["_id"]))
+
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    checkin = await db.daily_checkins.find_one({"user_id": str(current_user["_id"]), "log_date": yesterday})
+    yesterday_focus = checkin.get("tomorrow_focus") or None if checkin else None
+
     return HomeContextOut(
         era=ctx.era,
         era_label=ctx.era_label,
         becoming=ctx.becoming,
         top_pillars=[PillarOut(pillar=p, label=PILLARS[p]["label"], emoji=PILLARS[p]["emoji"]) for p in ctx.top_pillars],
+        yesterday_focus=yesterday_focus,
     )
 
 

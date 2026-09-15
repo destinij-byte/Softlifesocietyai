@@ -271,6 +271,25 @@ export default function Home() {
           <Muted onPress={() => router.push("/(tabs)/challenges")}>View ›</Muted>
         </Card>
       </StaggerIn>
+
+      <StaggerIn index={6}>
+        <Pressable onPress={() => router.push("/(tabs)/night-reset")}>
+          <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, flex: 1 }}>
+              <Icon name="moon" size={17} color={theme.primary} />
+              <View style={{ flex: 1 }}>
+                <Body>Night Reset</Body>
+                {homeContext?.yesterday_focus ? (
+                  <Muted style={{ fontSize: 11 }}>Yesterday's focus: {homeContext.yesterday_focus}</Muted>
+                ) : (
+                  <Muted style={{ fontSize: 11 }}>Close out your day</Muted>
+                )}
+              </View>
+            </View>
+            <Muted>›</Muted>
+          </Card>
+        </Pressable>
+      </StaggerIn>
     </Screen>
   );
 }

@@ -48,6 +48,7 @@ async def ensure_indexes(db: AsyncIOMotorDatabase | None = None) -> None:
 
     await db.blueprints.create_index("user_id", unique=True)
     await db.moods.create_index([("user_id", 1), ("log_date", 1)], unique=True)
+    await db.daily_checkins.create_index([("user_id", 1), ("log_date", 1)], unique=True)
 
     await db.luna_memories.create_index([("user_id", 1), ("created_at", -1)])
     await db.luna_rate_limits.create_index("user_id", unique=True)
