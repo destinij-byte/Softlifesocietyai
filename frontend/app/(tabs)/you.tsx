@@ -42,6 +42,7 @@ export default function You() {
 
   const menuItems: MenuItem[] = [
     { label: "My Blueprint", icon: "sparkle", onPress: () => router.push("/(onboarding)/blueprint") },
+    { label: "Progress", icon: "target", onPress: () => router.push("/(tabs)/progress") },
     { label: "Goals", icon: "target", onPress: () => router.push("/(tabs)/goals") },
     { label: "Wins", icon: "trophy", onPress: () => router.push("/(tabs)/challenges") },
     { label: "Routines", icon: "checklist", onPress: () => router.push("/(tabs)/routines") },

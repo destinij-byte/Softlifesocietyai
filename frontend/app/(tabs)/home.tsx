@@ -12,7 +12,7 @@ import { StaggerIn } from "@/components/StaggerIn";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
-import { CatalogEntry, DailySummary, HomeContext, LeaderboardRow, MealSuggestion, MyChallenge, Routine, WaterState } from "@/services/types";
+import { Alignment, CatalogEntry, DailySummary, HomeContext, LeaderboardRow, MealSuggestion, MyChallenge, Routine, WaterState } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
 function greeting(): string {
@@ -34,6 +34,7 @@ export default function Home() {
   const [moodOptions, setMoodOptions] = useState<Record<string, CatalogEntry>>({});
   const [mood, setMood] = useState<string | null>(null);
   const [homeContext, setHomeContext] = useState<HomeContext | null>(null);
+  const [alignment, setAlignment] = useState<Alignment | null>(null);
 
   const [suggestion, setSuggestion] = useState<MealSuggestion | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,6 +52,7 @@ export default function Home() {
       apiRequest<Record<string, CatalogEntry>>("/home/mood/options", { auth: false }),
       apiRequest<{ mood: string | null }>("/home/mood"),
       apiRequest<HomeContext>("/home/context"),
+      apiRequest<Alignment>("/progress/alignment"),
     ]);
 
     if (results[0].status === "fulfilled") setSummary(results[0].value);
@@ -61,6 +63,7 @@ export default function Home() {
     if (results[5].status === "fulfilled") setMoodOptions(results[5].value);
     if (results[6].status === "fulfilled") setMood(results[6].value.mood);
     if (results[7].status === "fulfilled") setHomeContext(results[7].value);
+    if (results[8].status === "fulfilled") setAlignment(results[8].value);
     setLoaded(true);
   };
 
@@ -272,7 +275,23 @@ export default function Home() {
         </Card>
       </StaggerIn>
 
-      <StaggerIn index={6}>
+      {alignment && (
+        <StaggerIn index={6}>
+          <Pressable onPress={() => router.push("/(tabs)/progress")}>
+            <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View style={{ flex: 1 }}>
+                <Body>{Math.round(alignment.score * 100)}% aligned this week</Body>
+                <Muted style={{ fontSize: 11 }} numberOfLines={1}>
+                  {alignment.why}
+                </Muted>
+              </View>
+              <Muted>›</Muted>
+            </Card>
+          </Pressable>
+        </StaggerIn>
+      )}
+
+      <StaggerIn index={7}>
         <Pressable onPress={() => router.push("/(tabs)/night-reset")}>
           <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, flex: 1 }}>

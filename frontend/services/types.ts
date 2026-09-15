@@ -194,6 +194,14 @@ export type NightCheckin = {
   day_summary: DaySnapshot;
 };
 
+export type PillarAlignment = { pillar: Pillar; label: string; score: number };
+
+export type Alignment = {
+  score: number;
+  why: string;
+  pillar_scores: PillarAlignment[];
+};
+
 export type CustomAffirmation = { id: string; text: string };
 
 export type AffirmationState = {
