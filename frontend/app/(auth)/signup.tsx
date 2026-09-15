@@ -21,7 +21,7 @@ export default function SignUp() {
     setLoading(true);
     try {
       await signUp(name, email, password);
-      router.replace("/(tabs)/home");
+      router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {

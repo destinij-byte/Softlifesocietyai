@@ -36,7 +36,7 @@ export default function Paywall() {
     try {
       await apiRequest("/subscriptions/subscribe", { method: "POST", body: { tier: selected } });
       await refreshUser();
-      router.replace("/(tabs)/home");
+      router.replace("/");
     } finally {
       setLoading(false);
     }

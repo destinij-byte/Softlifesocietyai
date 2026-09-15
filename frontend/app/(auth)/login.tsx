@@ -20,7 +20,7 @@ export default function Login() {
     setLoading(true);
     try {
       await logIn(email, password);
-      router.replace("/(tabs)/home");
+      router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {

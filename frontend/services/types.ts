@@ -76,6 +76,8 @@ export type VisionImage = {
   created_at: string;
 };
 
+export type BreakdownItem = { id: string; period: "monthly" | "weekly" | "today"; label: string; target: number | null; done: boolean };
+
 export type Goal = {
   id: string;
   title: string;
@@ -84,9 +86,13 @@ export type Goal = {
   deadline: string | null;
   emoji: string;
   timeframe: GoalTimeframe;
+  pillar: Pillar | null;
+  why: string | null;
+  target_value: number | null;
   progress: number;
   milestones: Milestone[];
   vision_images: VisionImage[];
+  breakdown: BreakdownItem[];
   created_at: string;
 };
 
@@ -133,6 +139,23 @@ export type Friend = {
   id: string;
   name: string;
   avatar_emoji: string;
+};
+
+export type Pillar = "mind" | "body" | "glow" | "money" | "career" | "home" | "relationships" | "growth";
+
+export type Era = "glow_up" | "wellness" | "money" | "ceo" | "discipline" | "peace" | "new" | "soft_life";
+
+export type CatalogEntry = { label: string; emoji: string };
+
+export type PillarPriority = { pillar: Pillar; priority: number };
+
+export type Blueprint = {
+  era: Era | null;
+  current_state: string;
+  becoming: string;
+  pillars: PillarPriority[];
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type CustomAffirmation = { id: string; text: string };
