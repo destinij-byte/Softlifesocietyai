@@ -46,6 +46,7 @@ _USER_OWNED_COLLECTIONS = (
     "water_logs",
     "challenge_participants",
     "luna_memories",
+    "blueprints",
 )
 
 

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
+from app.schemas.pillars import PILLARS, is_valid_pillar
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
@@ -46,6 +47,23 @@ class VisionImageOut(BaseModel):
     created_at: datetime
 
 
+class BreakdownItem(BaseModel):
+    """One step in a Smart Goal's target -> monthly -> weekly -> today
+    decomposition. `period` says which level of the breakdown this is."""
+
+    id: str
+    period: str  # "monthly" | "weekly" | "today"
+    label: str = Field(min_length=1, max_length=200)
+    target: float | None = None
+    done: bool = False
+
+
+class BreakdownIn(BaseModel):
+    period: str
+    label: str = Field(min_length=1, max_length=200)
+    target: float | None = None
+
+
 class GoalIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     category: str
@@ -53,6 +71,9 @@ class GoalIn(BaseModel):
     deadline: str | None = None
     emoji: str = "🎯"
     timeframe: str = "none"
+    pillar: str | None = None
+    why: str | None = Field(default=None, max_length=400)
+    target_value: float | None = None
 
 
 class GoalOut(GoalIn):
@@ -60,6 +81,7 @@ class GoalOut(GoalIn):
     progress: float = 0
     milestones: list[MilestoneOut] = []
     vision_images: list[VisionImageOut] = []
+    breakdown: list[BreakdownItem] = []
     created_at: datetime
 
 
@@ -71,6 +93,16 @@ def _validate_category(category: str) -> None:
 def _validate_timeframe(timeframe: str) -> None:
     if timeframe not in TIMEFRAMES:
         raise HTTPException(status_code=400, detail="Invalid goal timeframe")
+
+
+def _validate_pillar(pillar: str | None) -> None:
+    if pillar is not None and not is_valid_pillar(pillar):
+        raise HTTPException(status_code=400, detail="Invalid pillar")
+
+
+def _validate_breakdown_period(period: str) -> None:
+    if period not in ("monthly", "weekly", "today"):
+        raise HTTPException(status_code=400, detail="period must be monthly, weekly, or today")
 
 
 def _compress_image(image_bytes: bytes, content_type: str | None) -> str:
@@ -123,11 +155,18 @@ def _serialize_goal(g: dict) -> GoalOut:
         deadline=g.get("deadline"),
         emoji=g.get("emoji", "🎯"),
         timeframe=g.get("timeframe", "none"),
+        pillar=g.get("pillar"),
+        why=g.get("why"),
+        target_value=g.get("target_value"),
         progress=g.get("progress", 0),
         milestones=[MilestoneOut(id=m["id"], title=m["title"], done=m.get("done", False)) for m in g.get("milestones", [])],
         vision_images=[
             VisionImageOut(id=v["id"], image=v["image"], caption=v.get("caption"), created_at=v["created_at"])
             for v in g.get("vision_images", [])
+        ],
+        breakdown=[
+            BreakdownItem(id=b["id"], period=b["period"], label=b["label"], target=b.get("target"), done=b.get("done", False))
+            for b in g.get("breakdown", [])
         ],
         created_at=g["created_at"],
     )
@@ -141,12 +180,14 @@ async def create_goal(
 ):
     _validate_category(payload.category)
     _validate_timeframe(payload.timeframe)
+    _validate_pillar(payload.pillar)
     doc = {
         "user_id": str(current_user["_id"]),
         **payload.model_dump(),
         "progress": 0,
         "milestones": [],
         "vision_images": [],
+        "breakdown": [],
         "created_at": datetime.now(timezone.utc),
     }
     result = await db.goals.insert_one(doc)
@@ -212,6 +253,70 @@ async def toggle_milestone(
 
     await db.goals.update_one({"_id": goal["_id"]}, {"$set": {"milestones": milestones}})
     goal["milestones"] = milestones
+    return _serialize_goal(goal)
+
+
+@router.post("/{goal_id}/breakdown", response_model=GoalOut)
+async def add_breakdown_item(
+    goal_id: str,
+    payload: BreakdownIn,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """Adds one step of the goal's target -> monthly -> weekly -> today
+    decomposition. A later phase lets Luna propose a full breakdown for the
+    user to approve; this endpoint is the CRUD layer either path writes
+    through, and is usable standalone today for a user who builds her own."""
+    _validate_breakdown_period(payload.period)
+    item = {"id": str(ObjectId()), "period": payload.period, "label": payload.label, "target": payload.target, "done": False}
+    result = await db.goals.find_one_and_update(
+        {"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
+        {"$push": {"breakdown": item}},
+        return_document=True,
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    return _serialize_goal(result)
+
+
+@router.put("/{goal_id}/breakdown/{item_id}/toggle", response_model=GoalOut)
+async def toggle_breakdown_item(
+    goal_id: str,
+    item_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    goal = await db.goals.find_one({"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+
+    breakdown = goal.get("breakdown", [])
+    found = False
+    for item in breakdown:
+        if item["id"] == item_id:
+            item["done"] = not item.get("done", False)
+            found = True
+    if not found:
+        raise HTTPException(status_code=404, detail="Breakdown item not found")
+
+    await db.goals.update_one({"_id": goal["_id"]}, {"$set": {"breakdown": breakdown}})
+    goal["breakdown"] = breakdown
+    return _serialize_goal(goal)
+
+
+@router.delete("/{goal_id}/breakdown/{item_id}", response_model=GoalOut)
+async def delete_breakdown_item(
+    goal_id: str,
+    item_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    goal = await db.goals.find_one({"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+
+    goal["breakdown"] = [item for item in goal.get("breakdown", []) if item["id"] != item_id]
+    await db.goals.update_one({"_id": goal["_id"]}, {"$set": {"breakdown": goal["breakdown"]}})
     return _serialize_goal(goal)
 
 
