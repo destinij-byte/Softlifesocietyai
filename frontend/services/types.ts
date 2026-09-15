@@ -17,10 +17,18 @@ export type AuthResponse = {
 
 export type LunaMode = "life" | "money" | "wellness" | "goals";
 
+export type LunaAction = {
+  type: string;
+  label: string;
+  payload: Record<string, unknown>;
+};
+
 export type ChatMessage = {
+  id?: string;
   role: "user" | "luna";
   content: string;
   mode: LunaMode;
+  actions?: LunaAction[];
   created_at: string;
 };
 
@@ -156,6 +164,13 @@ export type Blueprint = {
   pillars: PillarPriority[];
   created_at?: string;
   updated_at?: string;
+};
+
+export type HomeContext = {
+  era: Era | null;
+  era_label: string | null;
+  becoming: string;
+  top_pillars: { pillar: Pillar; label: string; emoji: string }[];
 };
 
 export type CustomAffirmation = { id: string; text: string };

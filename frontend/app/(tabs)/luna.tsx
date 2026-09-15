@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Body, Muted, Title } from "@/components/Themed";
 import { TextField } from "@/components/TextField";
 import { Button } from "@/components/Button";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
-import { ChatMessage, LunaMode } from "@/services/types";
+import { ChatMessage, Goal, LunaAction, LunaMode } from "@/services/types";
 import { spacing, radii } from "@/theme/tokens";
 
 const MODES: { key: LunaMode; label: string; emoji: string }[] = [
@@ -22,6 +22,7 @@ export default function YourAI() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [confirmedActions, setConfirmedActions] = useState<Set<string>>(new Set());
   const listRef = useRef<FlatList>(null);
 
   const loadMessages = async (m: LunaMode) => {
@@ -45,6 +46,42 @@ export default function YourAI() {
     } finally {
       setSending(false);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+  };
+
+  const runAction = async (messageId: string, index: number, action: LunaAction) => {
+    const key = `${messageId}:${index}`;
+    try {
+      if (action.type === "create_goal") {
+        await apiRequest("/goals", {
+          method: "POST",
+          body: {
+            title: String(action.payload.title ?? "New goal"),
+            category: String(action.payload.category ?? "personal"),
+            target: String(action.payload.target ?? ""),
+            emoji: "🎯",
+            timeframe: "none",
+          },
+        });
+      } else if (action.type === "generate_breakdown") {
+        const goals = await apiRequest<Goal[]>("/goals");
+        const goalTitle = String(action.payload.goal_title ?? "").toLowerCase();
+        const goal = goals.find((g) => g.title.toLowerCase() === goalTitle);
+        if (!goal) {
+          Alert.alert("Create the goal first", `I couldn't find a goal called "${action.payload.goal_title}" yet.`);
+          return;
+        }
+        const steps = Array.isArray(action.payload.steps) ? (action.payload.steps as Record<string, unknown>[]) : [];
+        for (const step of steps) {
+          await apiRequest(`/goals/${goal.id}/breakdown`, {
+            method: "POST",
+            body: { period: String(step.period ?? "today"), label: String(step.label ?? ""), target: step.target ?? null },
+          });
+        }
+      }
+      setConfirmedActions((prev) => new Set(prev).add(key));
+    } catch {
+      Alert.alert("Something went sideways", "That didn't go through — try again in a moment.");
     }
   };
 
@@ -74,7 +111,7 @@ export default function YourAI() {
           keyExtractor={(_, i) => String(i)}
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <View
               style={[
                 styles.bubble,
@@ -86,6 +123,31 @@ export default function YourAI() {
               ]}
             >
               <Body style={{ color: item.role === "user" ? "#1A1A1A" : theme.text }}>{item.content}</Body>
+              {(item.actions ?? []).map((action: LunaAction, actionIndex: number) => {
+                const messageId = item.id ?? String(index);
+                const key = `${messageId}:${actionIndex}`;
+                const done = confirmedActions.has(key);
+                return (
+                  <Pressable
+                    key={key}
+                    disabled={done}
+                    onPress={() => runAction(messageId, actionIndex, action)}
+                    style={{
+                      marginTop: spacing.sm,
+                      paddingHorizontal: spacing.md,
+                      paddingVertical: spacing.sm,
+                      borderRadius: radii.pill,
+                      borderWidth: 1,
+                      borderColor: theme.primary,
+                      backgroundColor: done ? "transparent" : theme.primary,
+                      alignSelf: "flex-start",
+                      opacity: done ? 0.6 : 1,
+                    }}
+                  >
+                    <Body style={{ color: done ? theme.primary : "#1A1A1A", fontWeight: "600" }}>{done ? "✓ Done" : action.label}</Body>
+                  </Pressable>
+                );
+              })}
             </View>
           )}
         />

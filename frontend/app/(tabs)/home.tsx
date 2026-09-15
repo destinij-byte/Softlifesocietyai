@@ -11,7 +11,7 @@ import { StaggerIn } from "@/components/StaggerIn";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
-import { CatalogEntry, DailySummary, LeaderboardRow, MealSuggestion, MyChallenge, Routine, WaterState } from "@/services/types";
+import { CatalogEntry, DailySummary, HomeContext, LeaderboardRow, MealSuggestion, MyChallenge, Routine, WaterState } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
 function greeting(): string {
@@ -32,6 +32,7 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [moodOptions, setMoodOptions] = useState<Record<string, CatalogEntry>>({});
   const [mood, setMood] = useState<string | null>(null);
+  const [homeContext, setHomeContext] = useState<HomeContext | null>(null);
 
   const [suggestion, setSuggestion] = useState<MealSuggestion | null>(null);
   const [busy, setBusy] = useState(false);
@@ -48,6 +49,7 @@ export default function Home() {
       apiRequest<LeaderboardRow[]>("/challenges/leaderboard"),
       apiRequest<Record<string, CatalogEntry>>("/home/mood/options", { auth: false }),
       apiRequest<{ mood: string | null }>("/home/mood"),
+      apiRequest<HomeContext>("/home/context"),
     ]);
 
     if (results[0].status === "fulfilled") setSummary(results[0].value);
@@ -57,6 +59,7 @@ export default function Home() {
     if (results[4].status === "fulfilled") setLeaderboard(results[4].value);
     if (results[5].status === "fulfilled") setMoodOptions(results[5].value);
     if (results[6].status === "fulfilled") setMood(results[6].value.mood);
+    if (results[7].status === "fulfilled") setHomeContext(results[7].value);
     setLoaded(true);
   };
 
@@ -99,6 +102,21 @@ export default function Home() {
   const bestChallenge = [...myChallenges].sort((a, b) => b.streak - a.streak)[0];
   const remaining = summary ? Math.max(summary.goal_calories - summary.total_calories, 0) : null;
 
+  // Era → priority weighting, not content-swapping: the tiles never change,
+  // only their order — ranked by how closely each one's pillar matches the
+  // Blueprint's current top priorities, so a "Money Era" user still sees
+  // Nourish and Hydrate, just not necessarily first.
+  const topPillarKeys = homeContext?.top_pillars.map((p) => p.pillar) ?? [];
+  const pillarRank = (pillar: string) => {
+    const idx = topPillarKeys.indexOf(pillar as (typeof topPillarKeys)[number]);
+    return idx === -1 ? topPillarKeys.length : idx;
+  };
+  const glanceTiles = [
+    { key: "nourish", pillar: "body", node: <GlanceTile icon={<Icon name="plate" size={16} color={theme.primary} />} label="Nourish" value={summary ? `${summary.total_calories}` : "—"} sub={summary ? `of ${summary.goal_calories} cal` : "unavailable"} /> },
+    { key: "hydrate", pillar: "body", node: <GlanceTile icon={<Body style={{ fontSize: 16 }}>💧</Body>} label="Hydrate" value={water ? `${water.count}` : "—"} sub={water ? `of ${water.goal} glasses` : "unavailable"} /> },
+    { key: "ritual", pillar: "mind", node: <GlanceTile icon={<Icon name="target" size={16} color={theme.primary} />} label="Ritual" value={`${ritualDone}/${ritualTotal}`} sub="today" /> },
+  ].sort((a, b) => pillarRank(a.pillar) - pillarRank(b.pillar));
+
   return (
     <Screen>
       <StaggerIn index={0}>
@@ -107,6 +125,14 @@ export default function Home() {
           <Title>
             {greeting()}, {user.name.split(" ")[0]}.
           </Title>
+          {homeContext?.era_label && (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 4 }}>
+              <Body style={{ fontSize: 12, color: theme.primary, fontWeight: "600", letterSpacing: 1 }}>{homeContext.era_label.toUpperCase()}</Body>
+              {homeContext.top_pillars.length > 0 && (
+                <Muted style={{ fontSize: 12 }}>· Prioritizing {homeContext.top_pillars.map((p) => p.label).join(", ")}</Muted>
+              )}
+            </View>
+          )}
         </View>
       </StaggerIn>
 
@@ -179,14 +205,9 @@ export default function Home() {
         <View style={{ gap: spacing.sm }}>
           <Subtitle style={{ fontSize: 15 }}>Your Day at a Glance</Subtitle>
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
-            <GlanceTile
-              icon={<Icon name="plate" size={16} color={theme.primary} />}
-              label="Nourish"
-              value={summary ? `${summary.total_calories}` : "—"}
-              sub={summary ? `of ${summary.goal_calories} cal` : "unavailable"}
-            />
-            <GlanceTile icon={<Body style={{ fontSize: 16 }}>💧</Body>} label="Hydrate" value={water ? `${water.count}` : "—"} sub={water ? `of ${water.goal} glasses` : "unavailable"} />
-            <GlanceTile icon={<Icon name="target" size={16} color={theme.primary} />} label="Ritual" value={`${ritualDone}/${ritualTotal}`} sub="today" />
+            {glanceTiles.map((t) => (
+              <React.Fragment key={t.key}>{t.node}</React.Fragment>
+            ))}
           </View>
         </View>
       </StaggerIn>

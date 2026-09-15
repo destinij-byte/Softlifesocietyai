@@ -9,6 +9,7 @@ from app.core.db import get_db
 from app.core.deps import get_current_user
 from app.core.time_utils import ensure_aware, utcnow
 from app.schemas.luna import ChatMessageIn, ChatMessageOut, MemoryIn, MemoryOut
+from app.services.blueprint_context import get_blueprint_context
 from app.services.luna import MODE_PROMPTS, build_message_doc, get_luna_reply
 
 router = APIRouter(prefix="/luna", tags=["luna"])
@@ -58,6 +59,13 @@ async def _build_context_summary(db: AsyncIOMotorDatabase, user_id: str, mode: s
     """Structured, mode-gated context — only what's relevant to the current
     question, never a dump of every collection the user owns."""
     parts: list[str] = []
+
+    # Era/pillar priorities are relevant to every mode — this is what makes
+    # Luna's suggestions era-aware without a mode-specific branch for it.
+    blueprint = await get_blueprint_context(db, user_id)
+    blueprint_summary = blueprint.summary()
+    if blueprint_summary:
+        parts.append(blueprint_summary)
 
     if mode in ("wellness", "life"):
         today = date.today().isoformat()

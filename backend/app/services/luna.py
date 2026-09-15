@@ -1,5 +1,6 @@
 import asyncio
 import random
+import re
 from datetime import datetime, timezone
 
 import anthropic
@@ -128,7 +129,10 @@ def luna_reply_templated(message: str, user_name: str) -> tuple[str, list[LunaAc
         return random.choice(GREETINGS), []
 
     for keyword, topic in KEYWORD_MAP.items():
-        if keyword in lowered:
+        # \b before the keyword only (not after) so stems like "exhaust" or
+        # "motivat" still match "exhausted"/"motivation", but "eat" no longer
+        # false-matches inside "create" or "goal" inside "goalie".
+        if re.search(rf"\b{re.escape(keyword)}", lowered):
             return random.choice(TOPIC_RESPONSES[topic]), []
 
     return random.choice(DEFAULT_RESPONSES), []

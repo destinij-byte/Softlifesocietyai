@@ -46,3 +46,26 @@ async def test_mood_is_cross_user_scoped(client):
 
     fetched_b = await client.get("/home/mood", headers=headers_b)
     assert fetched_b.json()["mood"] is None
+
+
+async def test_home_context_is_empty_for_new_user(client):
+    headers = await _signup(client, "context-new@example.com")
+    response = await client.get("/home/context", headers=headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["era"] is None
+    assert body["top_pillars"] == []
+
+
+async def test_home_context_reflects_blueprint(client):
+    headers = await _signup(client, "context-set@example.com")
+    await client.put(
+        "/blueprint",
+        json={"era": "money", "becoming": "Financially free", "pillars": [{"pillar": "money", "priority": 5}]},
+        headers=headers,
+    )
+    response = await client.get("/home/context", headers=headers)
+    body = response.json()
+    assert body["era"] == "money"
+    assert body["era_label"] == "Money Era"
+    assert body["top_pillars"][0]["pillar"] == "money"

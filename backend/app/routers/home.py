@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
+from app.schemas.pillars import PILLARS
+from app.services.blueprint_context import get_blueprint_context
 
 router = APIRouter(prefix="/home", tags=["home"])
 
@@ -25,6 +27,35 @@ class MoodIn(BaseModel):
 class MoodOut(BaseModel):
     mood: str | None
     log_date: str
+
+
+class PillarOut(BaseModel):
+    pillar: str
+    label: str
+    emoji: str
+
+
+class HomeContextOut(BaseModel):
+    era: str | None
+    era_label: str | None
+    becoming: str
+    top_pillars: list[PillarOut]
+
+
+@router.get("/context", response_model=HomeContextOut)
+async def get_home_context(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """What Home reads to stay era-aware — an era banner and a priority order
+    for its tiles — without Home querying the Blueprint collection itself."""
+    ctx = await get_blueprint_context(db, str(current_user["_id"]))
+    return HomeContextOut(
+        era=ctx.era,
+        era_label=ctx.era_label,
+        becoming=ctx.becoming,
+        top_pillars=[PillarOut(pillar=p, label=PILLARS[p]["label"], emoji=PILLARS[p]["emoji"]) for p in ctx.top_pillars],
+    )
 
 
 @router.get("/mood/options")
