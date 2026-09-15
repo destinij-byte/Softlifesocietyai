@@ -47,6 +47,7 @@ export default function You() {
     { label: "Wins", icon: "trophy", onPress: () => router.push("/(tabs)/challenges") },
     { label: "Routines", icon: "checklist", onPress: () => router.push("/(tabs)/routines") },
     { label: "Night Reset", icon: "moon", onPress: () => router.push("/(tabs)/night-reset") },
+    { label: "Weekly Reset", icon: "checklist", onPress: () => router.push("/(tabs)/weekly-reset") },
     { label: "Nutrition preferences", icon: "plate", onPress: () => router.push("/(tabs)/nourish-ai") },
     { label: "Subscription", icon: "sparkle", onPress: () => router.push("/(auth)/paywall") },
     { label: "Personal preferences", icon: "heart", onPress: () => {} },

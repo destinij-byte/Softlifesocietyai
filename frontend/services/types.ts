@@ -202,6 +202,24 @@ export type Alignment = {
   pillar_scores: PillarAlignment[];
 };
 
+export type ChallengeWeek = { slug: string; title: string; emoji: string; check_ins_this_week: number };
+
+export type GoalOverview = { title: string; pillar: Pillar | null; progress: number };
+
+export type WeeklyReset = {
+  week_start: string;
+  week_end: string;
+  days: DaySnapshot[];
+  water_avg_pct: number;
+  nourish_days_logged: number;
+  mood_days_logged: number;
+  checkins_completed: number;
+  best_day: string | null;
+  challenges: ChallengeWeek[];
+  goals_overview: GoalOverview[];
+  alignment: Alignment;
+};
+
 export type CustomAffirmation = { id: string; text: string };
 
 export type AffirmationState = {

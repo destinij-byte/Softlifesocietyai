@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from app.core.config import get_settings, validate_production_settings
 from app.core.db import close_client, ensure_indexes, get_client
-from app.routers import affirmations, auth, blueprint, challenges, goals, home, luna, night_reset, nutrition, progress, routines, social, subscriptions
+from app.routers import affirmations, auth, blueprint, challenges, goals, home, luna, night_reset, nutrition, progress, routines, social, subscriptions, weekly_reset
 
 logger = logging.getLogger("soft_life_society")
 
@@ -49,6 +49,7 @@ app.include_router(blueprint.router)
 app.include_router(home.router)
 app.include_router(night_reset.router)
 app.include_router(progress.router)
+app.include_router(weekly_reset.router)
 
 
 @app.exception_handler(InvalidId)

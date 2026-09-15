@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { View } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Screen } from "@/components/Screen";
 import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
 import { ProgressRing } from "@/components/ProgressRing";
@@ -35,6 +35,10 @@ export default function Progress() {
         </ProgressRing>
         <Body style={{ textAlign: "center", color: theme.textMuted, maxWidth: 280 }}>{alignment.why}</Body>
       </Card>
+
+      <Muted style={{ textAlign: "center" }} onPress={() => router.push("/(tabs)/weekly-reset")}>
+        See your full Weekly Reset ›
+      </Muted>
 
       {alignment.pillar_scores.length > 0 && (
         <View style={{ gap: spacing.sm }}>

@@ -74,6 +74,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="challenges" options={{ href: null }} />
       <Tabs.Screen name="night-reset" options={{ href: null }} />
       <Tabs.Screen name="progress" options={{ href: null }} />
+      <Tabs.Screen name="weekly-reset" options={{ href: null }} />
     </Tabs>
   );
 }
