@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
-from app.core.time_utils import ensure_aware, utcnow
+from app.core.rate_limit import check_rate_limit
 from app.schemas.luna import ChatMessageIn, ChatMessageOut, MemoryIn, MemoryOut
 from app.services.blueprint_context import get_blueprint_context
 from app.services.luna import MODE_PROMPTS, build_message_doc, get_luna_reply
@@ -40,19 +40,13 @@ def _validate_mode(mode: str) -> str:
 
 
 async def _check_luna_rate_limit(db: AsyncIOMotorDatabase, user_id: str) -> None:
-    window_start = utcnow() - timedelta(hours=1)
-    record = await db.luna_rate_limits.find_one({"user_id": user_id})
-    if record and ensure_aware(record.get("window_start", utcnow())) > window_start:
-        if record.get("count", 0) >= LUNA_MESSAGE_LIMIT_PER_HOUR:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="You've reached Luna's hourly message limit — she'll be ready again soon.",
-            )
-        await db.luna_rate_limits.update_one({"user_id": user_id}, {"$inc": {"count": 1}})
-    else:
-        await db.luna_rate_limits.update_one(
-            {"user_id": user_id}, {"$set": {"window_start": utcnow(), "count": 1}}, upsert=True
-        )
+    await check_rate_limit(
+        db,
+        f"luna:{user_id}",
+        LUNA_MESSAGE_LIMIT_PER_HOUR,
+        timedelta(hours=1),
+        "You've reached Luna's hourly message limit — she'll be ready again soon.",
+    )
 
 
 async def _build_context_summary(db: AsyncIOMotorDatabase, user_id: str, mode: str) -> str:

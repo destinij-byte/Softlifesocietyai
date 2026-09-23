@@ -9,6 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.deps import bearer_scheme, get_current_user
+from app.core.rate_limit import rate_limit_by_ip
 from app.core.time_utils import ensure_aware, utcnow
 from app.core.security import (
     create_access_token,
@@ -79,7 +80,18 @@ async def _clear_login_attempts(db: AsyncIOMotorDatabase, email: str) -> None:
     await db.login_attempts.delete_one({"email": email})
 
 
-@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/signup",
+    response_model=AuthResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[
+        Depends(
+            rate_limit_by_ip(
+                "signup", limit=5, window=timedelta(hours=1), message="Too many accounts created from this network — try again later."
+            )
+        )
+    ],
+)
 async def signup(payload: SignUpRequest, db: AsyncIOMotorDatabase = Depends(get_db)):
     email = _normalize_email(payload.email)
     existing = await db.users.find_one({"email": email})
@@ -165,7 +177,17 @@ async def delete_account(
     return None
 
 
-@router.post("/password-reset/request", response_model=MessageOut)
+@router.post(
+    "/password-reset/request",
+    response_model=MessageOut,
+    dependencies=[
+        Depends(
+            rate_limit_by_ip(
+                "password-reset-request", limit=5, window=timedelta(hours=1), message="Too many reset requests — try again later."
+            )
+        )
+    ],
+)
 async def request_password_reset(payload: PasswordResetRequest, db: AsyncIOMotorDatabase = Depends(get_db)):
     """Always returns the same message whether or not the email exists, so a
     caller can't use this endpoint to discover registered accounts."""

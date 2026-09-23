@@ -51,10 +51,19 @@ async def ensure_indexes(db: AsyncIOMotorDatabase | None = None) -> None:
     await db.daily_checkins.create_index([("user_id", 1), ("log_date", 1)], unique=True)
 
     await db.luna_memories.create_index([("user_id", 1), ("created_at", -1)])
-    await db.luna_rate_limits.create_index("user_id", unique=True)
+
+    # Shared sliding-window limiter (app/core/rate_limit.py) used by Luna chat,
+    # signup, password-reset-request, and the AI-cost nutrition endpoints —
+    # one collection, one index, instead of a table per endpoint.
+    await db.rate_limits.create_index("key", unique=True)
 
     await db.login_attempts.create_index("email", unique=True)
     await db.password_resets.create_index("token_hash", unique=True)
+
+    # `jti` is looked up on essentially every authenticated request
+    # (app/core/deps.py's get_current_user checks the denylist), so this is a
+    # hot-path index, not just cleanup.
+    await db.token_denylist.create_index("jti", unique=True)
     try:
         # TTL indexes aren't meaningfully enforced by mongomock in tests, but are
         # real cleanup against a real MongoDB — best-effort so a test backend

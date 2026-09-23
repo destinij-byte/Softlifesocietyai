@@ -1,5 +1,5 @@
 import base64
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.core.db import get_db
 from app.core.deps import get_current_user
+from app.core.rate_limit import rate_limit_by_user
 from app.schemas.nutrition import MealSuggestionOut
 from app.services.food_database import search_foods
 from app.services.nourish_ai import analyze_meal_photo, build_meal_suggestion
@@ -156,7 +157,17 @@ async def search(q: str = Query(""), current_user: dict = Depends(get_current_us
     return search_foods(q)
 
 
-@router.post("/analyze-meal", response_model=MealSuggestion)
+@router.post(
+    "/analyze-meal",
+    response_model=MealSuggestion,
+    dependencies=[
+        Depends(
+            rate_limit_by_user(
+                "analyze-meal", limit=20, window=timedelta(hours=1), message="You've reached the photo-analysis limit for now — try again soon."
+            )
+        )
+    ],
+)
 async def analyze_meal(
     photo: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
@@ -177,7 +188,17 @@ async def analyze_meal(
     return MealSuggestion(**result)
 
 
-@router.post("/meal-builder", response_model=MealSuggestion)
+@router.post(
+    "/meal-builder",
+    response_model=MealSuggestion,
+    dependencies=[
+        Depends(
+            rate_limit_by_user(
+                "meal-builder", limit=30, window=timedelta(hours=1), message="You've reached the meal-builder limit for now — try again soon."
+            )
+        )
+    ],
+)
 async def meal_builder(
     meal_type: str = Query("dinner"),
     current_user: dict = Depends(get_current_user),
