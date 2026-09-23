@@ -69,3 +69,64 @@ async def test_blueprint_is_cross_user_scoped(client):
 
     fetched_b = await client.get("/blueprint", headers=headers_b)
     assert fetched_b.json()["era"] is None
+
+
+async def test_new_catalog_endpoints_are_public(client):
+    for path in ("/blueprint/coaching-styles", "/blueprint/motivation-styles", "/blueprint/affirmation-categories", "/blueprint/manifestation-categories", "/blueprint/dietary-styles"):
+        response = await client.get(path)
+        assert response.status_code == 200
+        assert len(response.json()) > 0
+
+
+async def test_personalization_fields_default_to_empty(client):
+    headers = await _signup(client, "personalization-default@example.com")
+    response = await client.get("/blueprint", headers=headers)
+    body = response.json()
+    assert body["preferred_name"] is None
+    assert body["coaching_style"] is None
+    assert body["motivation_style"] is None
+    assert body["affirmation_categories"] == []
+    assert body["manifestation_categories"] == []
+    assert body["nutrition_preferences"] == {"dietary_style": None, "notes": ""}
+
+
+async def test_put_blueprint_saves_personalization_fields(client):
+    headers = await _signup(client, "personalization-save@example.com")
+    payload = {
+        "era": "wellness",
+        "preferred_name": "Des",
+        "coaching_style": "direct",
+        "motivation_style": "accountability",
+        "affirmation_categories": ["confidence", "money"],
+        "manifestation_categories": ["financial_freedom"],
+        "nutrition_preferences": {"dietary_style": "vegetarian", "notes": "No mushrooms"},
+    }
+    saved = await client.put("/blueprint", json=payload, headers=headers)
+    assert saved.status_code == 200
+    body = saved.json()
+    assert body["preferred_name"] == "Des"
+    assert body["coaching_style"] == "direct"
+    assert body["affirmation_categories"] == ["confidence", "money"]
+    assert body["nutrition_preferences"]["dietary_style"] == "vegetarian"
+
+    fetched = await client.get("/blueprint", headers=headers)
+    assert fetched.json()["coaching_style"] == "direct"
+
+
+async def test_invalid_personalization_values_are_rejected(client):
+    headers = await _signup(client, "personalization-invalid@example.com")
+
+    bad_coaching = await client.put("/blueprint", json={"coaching_style": "not-a-style"}, headers=headers)
+    assert bad_coaching.status_code == 422
+
+    bad_motivation = await client.put("/blueprint", json={"motivation_style": "not-a-style"}, headers=headers)
+    assert bad_motivation.status_code == 422
+
+    bad_affirmation_category = await client.put("/blueprint", json={"affirmation_categories": ["not-a-category"]}, headers=headers)
+    assert bad_affirmation_category.status_code == 422
+
+    bad_manifestation_category = await client.put("/blueprint", json={"manifestation_categories": ["not-a-category"]}, headers=headers)
+    assert bad_manifestation_category.status_code == 422
+
+    bad_dietary_style = await client.put("/blueprint", json={"nutrition_preferences": {"dietary_style": "carnivore-extreme"}}, headers=headers)
+    assert bad_dietary_style.status_code == 422

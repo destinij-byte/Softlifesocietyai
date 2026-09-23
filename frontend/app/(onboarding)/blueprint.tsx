@@ -8,10 +8,10 @@ import { TextField } from "@/components/TextField";
 import { ProgressBar } from "@/components/ProgressBar";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
-import { Blueprint, CatalogEntry, Era, Pillar } from "@/services/types";
+import { Blueprint, CatalogEntry, CoachingStyle, Era, MotivationStyle, NutritionPreferences, Pillar } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
-const STEP_COUNT = 4;
+const STEP_COUNT = 5;
 
 export default function BlueprintOnboarding() {
   const { theme } = useAppTheme();
@@ -19,11 +19,24 @@ export default function BlueprintOnboarding() {
 
   const [eras, setEras] = useState<Record<string, CatalogEntry>>({});
   const [pillars, setPillars] = useState<Record<string, CatalogEntry>>({});
+  const [coachingStyles, setCoachingStyles] = useState<Record<string, CatalogEntry>>({});
+  const [motivationStyles, setMotivationStyles] = useState<Record<string, CatalogEntry>>({});
 
   const [era, setEra] = useState<Era | null>(null);
   const [currentState, setCurrentState] = useState("");
   const [becoming, setBecoming] = useState("");
   const [priorities, setPriorities] = useState<Record<string, number>>({});
+  const [preferredName, setPreferredName] = useState("");
+  const [coachingStyle, setCoachingStyle] = useState<CoachingStyle | null>(null);
+  const [motivationStyle, setMotivationStyle] = useState<MotivationStyle | null>(null);
+
+  // Fields this wizard doesn't edit directly (owned by Affirmations /
+  // Manifestations / Nourish preferences screens) but must round-trip
+  // unchanged, since PUT /blueprint is a full upsert — without this, saving
+  // here would silently wipe out preferences set elsewhere.
+  const [affirmationCategories, setAffirmationCategories] = useState<string[]>([]);
+  const [manifestationCategories, setManifestationCategories] = useState<string[]>([]);
+  const [nutritionPreferences, setNutritionPreferences] = useState<NutritionPreferences>({ dietary_style: null, notes: "" });
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +45,27 @@ export default function BlueprintOnboarding() {
     Promise.all([
       apiRequest<Record<string, CatalogEntry>>("/blueprint/eras", { auth: false }),
       apiRequest<Record<string, CatalogEntry>>("/blueprint/pillars", { auth: false }),
-    ]).then(([e, p]) => {
+      apiRequest<Record<string, CatalogEntry>>("/blueprint/coaching-styles", { auth: false }),
+      apiRequest<Record<string, CatalogEntry>>("/blueprint/motivation-styles", { auth: false }),
+      apiRequest<Blueprint>("/blueprint"),
+    ]).then(([e, p, cs, ms, existing]) => {
       setEras(e);
       setPillars(p);
+      setCoachingStyles(cs);
+      setMotivationStyles(ms);
+
+      // Pre-fill from whatever's already saved — this screen doubles as the
+      // edit flow (You → My Blueprint), not just first-time onboarding.
+      setEra(existing.era);
+      setCurrentState(existing.current_state);
+      setBecoming(existing.becoming);
+      setPriorities(Object.fromEntries(existing.pillars.map((p) => [p.pillar, p.priority])));
+      setPreferredName(existing.preferred_name ?? "");
+      setCoachingStyle(existing.coaching_style);
+      setMotivationStyle(existing.motivation_style);
+      setAffirmationCategories(existing.affirmation_categories);
+      setManifestationCategories(existing.manifestation_categories);
+      setNutritionPreferences(existing.nutrition_preferences);
     });
   }, []);
 
@@ -56,6 +87,12 @@ export default function BlueprintOnboarding() {
         pillars: Object.entries(priorities)
           .filter(([, priority]) => priority > 0)
           .map(([pillar, priority]) => ({ pillar: pillar as Pillar, priority })),
+        preferred_name: preferredName.trim() || null,
+        coaching_style: coachingStyle,
+        motivation_style: motivationStyle,
+        affirmation_categories: affirmationCategories,
+        manifestation_categories: manifestationCategories,
+        nutrition_preferences: nutritionPreferences,
       };
       await apiRequest("/blueprint", { method: "PUT", body: payload });
       router.replace("/(tabs)/home");
@@ -169,8 +206,49 @@ export default function BlueprintOnboarding() {
       {step === 3 && (
         <View style={{ gap: spacing.md }}>
           <View style={{ gap: spacing.xs }}>
+            <Title>How should Luna show up for you?</Title>
+            <Body style={{ color: theme.textMuted }}>Optional — helps her match your tone and what actually gets you moving.</Body>
+          </View>
+          <View style={{ gap: spacing.sm }}>
+            <Muted>What should Luna call you?</Muted>
+            <TextField placeholder="e.g. Des (defaults to your name)" value={preferredName} onChangeText={setPreferredName} />
+          </View>
+          <View style={{ gap: spacing.sm }}>
+            <Muted>Coaching style</Muted>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+              {Object.entries(coachingStyles).map(([key, entry]) => (
+                <Button
+                  key={key}
+                  label={entry.label}
+                  emoji={entry.emoji}
+                  variant={coachingStyle === key ? "primary" : "secondary"}
+                  onPress={() => setCoachingStyle(coachingStyle === key ? null : (key as CoachingStyle))}
+                />
+              ))}
+            </View>
+          </View>
+          <View style={{ gap: spacing.sm }}>
+            <Muted>What motivates you most?</Muted>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+              {Object.entries(motivationStyles).map(([key, entry]) => (
+                <Button
+                  key={key}
+                  label={entry.label}
+                  emoji={entry.emoji}
+                  variant={motivationStyle === key ? "primary" : "secondary"}
+                  onPress={() => setMotivationStyle(motivationStyle === key ? null : (key as MotivationStyle))}
+                />
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {step === 4 && (
+        <View style={{ gap: spacing.md }}>
+          <View style={{ gap: spacing.xs }}>
             <Title>Your Blueprint</Title>
-            <Body style={{ color: theme.textMuted }}>This is the foundation Luna builds your daily plan from — you can refine it any time from You.</Body>
+            <Body style={{ color: theme.textMuted }}>This is the foundation Luna builds your daily plan from — you can refine it any time from More.</Body>
           </View>
           <Card style={{ gap: spacing.sm }}>
             <Body>
@@ -186,6 +264,8 @@ export default function BlueprintOnboarding() {
                   .join(", ")}
               </Muted>
             )}
+            {coachingStyle && <Muted>Coaching style: {coachingStyles[coachingStyle]?.label}</Muted>}
+            {motivationStyle && <Muted>Motivated by: {motivationStyles[motivationStyle]?.label}</Muted>}
           </Card>
           {error && <Body style={{ color: theme.danger }}>⚠️ {error}</Body>}
         </View>

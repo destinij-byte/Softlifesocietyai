@@ -157,11 +157,26 @@ export type CatalogEntry = { label: string; emoji: string };
 
 export type PillarPriority = { pillar: Pillar; priority: number };
 
+export type CoachingStyle = "gentle" | "direct" | "tough_love" | "cheerleader";
+export type MotivationStyle = "accountability" | "encouragement" | "results" | "big_picture";
+export type DietaryStyle = "none" | "vegetarian" | "vegan" | "pescatarian" | "gluten_free" | "dairy_free" | "low_carb";
+
+export type NutritionPreferences = {
+  dietary_style: DietaryStyle | null;
+  notes: string;
+};
+
 export type Blueprint = {
   era: Era | null;
   current_state: string;
   becoming: string;
   pillars: PillarPriority[];
+  preferred_name: string | null;
+  coaching_style: CoachingStyle | null;
+  motivation_style: MotivationStyle | null;
+  affirmation_categories: string[];
+  manifestation_categories: string[];
+  nutrition_preferences: NutritionPreferences;
   created_at?: string;
   updated_at?: string;
 };

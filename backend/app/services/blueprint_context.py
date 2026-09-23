@@ -7,10 +7,11 @@ go through here so era changes propagate everywhere at once instead of each
 feature growing its own era-specific branch.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.schemas.personalization import COACHING_STYLES, MOTIVATION_STYLES
 from app.schemas.pillars import ERAS, PILLARS
 
 # How many top-weighted pillars count as "current priorities" for ranking
@@ -25,12 +26,26 @@ class BlueprintContext:
     becoming: str
     top_pillars: list[str]  # pillar keys, ranked by priority weight desc
 
+    # Personalization — how Luna should talk to her and what actually moves
+    # her to act. None means "not set," not "use a default style silently";
+    # callers decide whether to fall back to the base voice.
+    preferred_name: str | None = None
+    coaching_style: str | None = None
+    motivation_style: str | None = None
+    affirmation_categories: list[str] = field(default_factory=list)
+    manifestation_categories: list[str] = field(default_factory=list)
+    dietary_style: str | None = None
+
     def summary(self) -> str:
         """Short natural-language context for prompting Luna or explaining an
         Alignment score — never a raw data dump."""
-        if not self.era and not self.top_pillars and not self.becoming:
+        if not any(
+            [self.era, self.top_pillars, self.becoming, self.coaching_style, self.motivation_style, self.preferred_name]
+        ):
             return ""
         parts: list[str] = []
+        if self.preferred_name:
+            parts.append(f"She goes by {self.preferred_name}")
         if self.era_label:
             parts.append(f"She's in her {self.era_label}")
         if self.top_pillars:
@@ -38,6 +53,10 @@ class BlueprintContext:
             parts.append(f"currently prioritizing: {labels}")
         if self.becoming:
             parts.append(f'Becoming: "{self.becoming}"')
+        if self.coaching_style:
+            parts.append(f"Preferred coaching style: {COACHING_STYLES[self.coaching_style]['label']}")
+        if self.motivation_style:
+            parts.append(f"What motivates her: {MOTIVATION_STYLES[self.motivation_style]['label']}")
         return ". ".join(parts) + "."
 
     def pillar_rank(self, pillar: str | None) -> int:
@@ -63,9 +82,19 @@ async def get_blueprint_context(db: AsyncIOMotorDatabase, user_id: str) -> Bluep
     pillars = sorted(doc.get("pillars", []), key=lambda p: p.get("priority", 0), reverse=True)
     top_pillars = [p["pillar"] for p in pillars[:TOP_PILLAR_COUNT] if p.get("pillar") in PILLARS]
 
+    coaching_style = doc.get("coaching_style")
+    motivation_style = doc.get("motivation_style")
+    nutrition_preferences = doc.get("nutrition_preferences") or {}
+
     return BlueprintContext(
         era=era,
         era_label=era_label,
         becoming=doc.get("becoming", "").strip(),
         top_pillars=top_pillars,
+        preferred_name=doc.get("preferred_name"),
+        coaching_style=coaching_style if coaching_style in COACHING_STYLES else None,
+        motivation_style=motivation_style if motivation_style in MOTIVATION_STYLES else None,
+        affirmation_categories=doc.get("affirmation_categories", []),
+        manifestation_categories=doc.get("manifestation_categories", []),
+        dietary_style=nutrition_preferences.get("dietary_style"),
     )

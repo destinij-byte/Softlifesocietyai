@@ -57,3 +57,55 @@ async def test_unknown_era_and_pillar_values_are_ignored_gracefully(test_db):
     ctx = await get_blueprint_context(test_db, "u2")
     assert ctx.era_label is None
     assert ctx.top_pillars == []
+
+
+async def test_personalization_fields_flow_into_context_and_summary(test_db):
+    await test_db.blueprints.insert_one(
+        {
+            "user_id": "u3",
+            "era": "discipline",
+            "becoming": "",
+            "pillars": [],
+            "current_state": "",
+            "preferred_name": "Des",
+            "coaching_style": "direct",
+            "motivation_style": "accountability",
+            "affirmation_categories": ["confidence"],
+            "manifestation_categories": [],
+            "nutrition_preferences": {"dietary_style": "vegetarian", "notes": ""},
+            "created_at": None,
+            "updated_at": None,
+        }
+    )
+
+    ctx = await get_blueprint_context(test_db, "u3")
+    assert ctx.preferred_name == "Des"
+    assert ctx.coaching_style == "direct"
+    assert ctx.motivation_style == "accountability"
+    assert ctx.dietary_style == "vegetarian"
+    assert ctx.affirmation_categories == ["confidence"]
+
+    summary = ctx.summary()
+    assert "Des" in summary
+    assert "Direct & no-fluff" in summary
+    assert "Accountability & structure" in summary
+
+
+async def test_unknown_coaching_and_motivation_styles_are_ignored_gracefully(test_db):
+    await test_db.blueprints.insert_one(
+        {
+            "user_id": "u4",
+            "era": None,
+            "becoming": "",
+            "pillars": [],
+            "current_state": "",
+            "coaching_style": "not-a-real-style",
+            "motivation_style": "also-not-real",
+            "created_at": None,
+            "updated_at": None,
+        }
+    )
+
+    ctx = await get_blueprint_context(test_db, "u4")
+    assert ctx.coaching_style is None
+    assert ctx.motivation_style is None
