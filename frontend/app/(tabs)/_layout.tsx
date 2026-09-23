@@ -65,7 +65,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="you"
-        options={{ title: "You", tabBarIcon: ({ color, focused }) => <TabIcon name="person" color={color} focused={focused} /> }}
+        options={{ title: "More", tabBarIcon: ({ color, focused }) => <TabIcon name="person" color={color} focused={focused} /> }}
       />
       {/* Routines and Wins are still full screens (reachable from Home's
           "Today's Ritual" and Goals' Wins link) — href:null keeps them out

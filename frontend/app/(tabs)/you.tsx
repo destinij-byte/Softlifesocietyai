@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, View } from "react-native";
+import { Alert, Pressable, View } from "react-native";
 import { router } from "expo-router";
 import { Screen } from "@/components/Screen";
 import { Card, Subtitle, Body, Muted } from "@/components/Themed";
@@ -40,19 +40,21 @@ export default function You() {
 
   if (!user) return null;
 
+  const comingSoon = (feature: string) => Alert.alert(feature, "This is on the way — not built yet.");
+
   const menuItems: MenuItem[] = [
     { label: "My Blueprint", icon: "sparkle", onPress: () => router.push("/(onboarding)/blueprint") },
     { label: "Progress", icon: "target", onPress: () => router.push("/(tabs)/progress") },
     { label: "Goals", icon: "target", onPress: () => router.push("/(tabs)/goals") },
+    { label: "Affirmations", icon: "heart", onPress: () => router.push("/(tabs)/routines") },
     { label: "Wins", icon: "trophy", onPress: () => router.push("/(tabs)/challenges") },
     { label: "Routines", icon: "checklist", onPress: () => router.push("/(tabs)/routines") },
     { label: "Night Reset", icon: "moon", onPress: () => router.push("/(tabs)/night-reset") },
     { label: "Weekly Reset", icon: "checklist", onPress: () => router.push("/(tabs)/weekly-reset") },
     { label: "Nutrition preferences", icon: "plate", onPress: () => router.push("/(tabs)/nourish-ai") },
     { label: "Subscription", icon: "sparkle", onPress: () => router.push("/(auth)/paywall") },
-    { label: "Personal preferences", icon: "heart", onPress: () => {} },
-    { label: "Notifications", icon: "bell", onPress: () => {} },
-    { label: "Privacy", icon: "lock", onPress: () => {} },
+    { label: "Notifications", icon: "bell", onPress: () => comingSoon("Notifications") },
+    { label: "Privacy", icon: "lock", onPress: () => comingSoon("Privacy") },
   ];
 
   return (
