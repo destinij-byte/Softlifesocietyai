@@ -4,9 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Body, Muted, Title } from "@/components/Themed";
 import { TextField } from "@/components/TextField";
 import { Button } from "@/components/Button";
+import { AsyncState } from "@/components/AsyncState";
 import { LunaAvatar } from "@/components/LunaAvatar";
 import { useAppTheme } from "@/context/ThemeContext";
-import { apiRequest } from "@/services/api";
+import { apiRequest, ApiError } from "@/services/api";
 import { ChatMessage, Goal, LunaAction, LunaMode } from "@/services/types";
 import { spacing, radii } from "@/theme/tokens";
 
@@ -24,11 +25,21 @@ export default function YourAI() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [confirmedActions, setConfirmedActions] = useState<Set<string>>(new Set());
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
 
   const loadMessages = async (m: LunaMode) => {
-    const data = await apiRequest<ChatMessage[]>(`/luna/messages?mode=${m}`);
-    setMessages(data);
+    setMessagesLoading(true);
+    setMessagesError(null);
+    try {
+      const data = await apiRequest<ChatMessage[]>(`/luna/messages?mode=${m}`);
+      setMessages(data);
+    } catch (e) {
+      setMessagesError(e instanceof ApiError ? e.message : "Couldn't load your conversation with Luna.");
+    } finally {
+      setMessagesLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -109,6 +120,7 @@ export default function YourAI() {
           ))}
         </ScrollView>
 
+        <AsyncState loading={messagesLoading} error={messagesError} onRetry={() => loadMessages(mode)}>
         <FlatList
           ref={listRef}
           data={messages}
@@ -155,6 +167,7 @@ export default function YourAI() {
             </View>
           )}
         />
+        </AsyncState>
 
         <View style={styles.inputRow}>
           <View style={{ flex: 1 }}>

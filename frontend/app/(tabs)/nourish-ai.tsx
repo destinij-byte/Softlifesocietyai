@@ -4,12 +4,13 @@ import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import { Screen } from "@/components/Screen";
 import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
+import { AsyncState } from "@/components/AsyncState";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/TextField";
 import { ProgressBar } from "@/components/ProgressBar";
 import { ProgressRing } from "@/components/ProgressRing";
 import { useAppTheme } from "@/context/ThemeContext";
-import { apiRequest, apiUpload } from "@/services/api";
+import { apiRequest, apiUpload, ApiError } from "@/services/api";
 import { DailySummary, FoodResult, MealSuggestion, WaterState } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
@@ -36,13 +37,23 @@ export default function NourishAI() {
   const [photoSuggestion, setPhotoSuggestion] = useState<MealSuggestion | null>(null);
   const [builderSuggestion, setBuilderSuggestion] = useState<MealSuggestion | null>(null);
 
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const load = async () => {
-    const [data, waterData] = await Promise.all([
-      apiRequest<DailySummary>("/nourish/today"),
-      apiRequest<WaterState>("/nourish/water"),
-    ]);
-    setSummary(data);
-    setWater(waterData);
+    try {
+      const [data, waterData] = await Promise.all([
+        apiRequest<DailySummary>("/nourish/today"),
+        apiRequest<WaterState>("/nourish/water"),
+      ]);
+      setSummary(data);
+      setWater(waterData);
+      setLoadError(null);
+    } catch (e) {
+      setLoadError(e instanceof ApiError ? e.message : "Couldn't load Nourish AI.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const addWater = async () => {
@@ -139,15 +150,16 @@ export default function NourishAI() {
     }
   };
 
-  if (!summary) return null;
-
-  const remaining = summary.goal_calories - summary.total_calories;
-  const grouped = MEAL_TYPES.map((type) => ({ type, entries: summary.entries.filter((e) => e.meal_type === type) }));
+  const remaining = summary ? summary.goal_calories - summary.total_calories : 0;
+  const grouped = summary ? MEAL_TYPES.map((type) => ({ type, entries: summary.entries.filter((e) => e.meal_type === type) })) : [];
 
   return (
     <Screen>
       <Title>Nourish AI</Title>
 
+      <AsyncState loading={loading} error={loadError} onRetry={load}>
+      {summary && (
+      <>
       <Card style={{ alignItems: "center", gap: spacing.sm }}>
         <ProgressRing progress={summary.total_calories / summary.goal_calories} size={160}>
           <Subtitle style={{ fontSize: 26 }}>{summary.total_calories}</Subtitle>
@@ -268,6 +280,9 @@ export default function NourishAI() {
             </View>
           )
       )}
+      </>
+      )}
+      </AsyncState>
     </Screen>
   );
 }

@@ -3,12 +3,13 @@ import { View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Screen } from "@/components/Screen";
 import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
+import { AsyncState } from "@/components/AsyncState";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/TextField";
 import { ProgressBar } from "@/components/ProgressBar";
 import { VisionBoard } from "@/components/VisionBoard";
 import { useAppTheme } from "@/context/ThemeContext";
-import { apiRequest } from "@/services/api";
+import { apiRequest, ApiError } from "@/services/api";
 import { Goal, GoalTimeframe } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
@@ -35,10 +36,23 @@ export default function Goals() {
   const [target, setTarget] = useState("");
   const [busy, setBusy] = useState(false);
   const [milestoneDrafts, setMilestoneDrafts] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Mutations (bump progress, add/toggle milestones) already refresh the
+  // list in the background via this same load() without disturbing the rest
+  // of the screen — so only the *first* load blocks with a spinner; a later
+  // failure shows as a small inline banner instead of wiping the list.
   const load = async () => {
-    const data = await apiRequest<Goal[]>("/goals");
-    setGoals(data);
+    try {
+      const data = await apiRequest<Goal[]>("/goals");
+      setGoals(data);
+      setLoadError(null);
+    } catch (e) {
+      setLoadError(e instanceof ApiError ? e.message : "Couldn't refresh your goals.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useFocusEffect(
@@ -94,6 +108,9 @@ export default function Goals() {
       <Title>Goals</Title>
       <Muted>Money, Wellness, Career, Personal — broken into small steps.</Muted>
 
+      {loadError && goals.length > 0 && <Muted style={{ color: theme.danger }}>⚠️ {loadError}</Muted>}
+
+      <AsyncState loading={loading && goals.length === 0} error={goals.length === 0 ? loadError : null} onRetry={load}>
       {creating ? (
         <Card style={{ gap: spacing.sm }}>
           <Subtitle>New goal</Subtitle>
@@ -180,6 +197,7 @@ export default function Goals() {
       })}
 
       {goals.length === 0 && !creating && <Muted>No goals yet — start with something small 🌷</Muted>}
+      </AsyncState>
     </Screen>
   );
 }

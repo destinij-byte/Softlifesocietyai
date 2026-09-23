@@ -4,6 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Screen } from "@/components/Screen";
 import Svg, { Circle, Path } from "react-native-svg";
 import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
+import { AsyncState } from "@/components/AsyncState";
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
 import { LunaAvatar } from "@/components/LunaAvatar";
@@ -98,7 +99,15 @@ export default function Home() {
     }
   };
 
-  if (!loaded || !user) return null;
+  if (!loaded || !user) {
+    return (
+      <Screen>
+        <AsyncState loading error={null}>
+          {null}
+        </AsyncState>
+      </Screen>
+    );
+  }
 
   const ritualDone = ritual?.steps.filter((s) => s.done).length ?? 0;
   const ritualTotal = ritual?.steps.length ?? 0;
