@@ -240,7 +240,18 @@ export type CustomAffirmation = { id: string; text: string };
 export type AffirmationState = {
   type: "morning" | "night";
   daily_affirmation: string;
+  daily_affirmation_id: string;
+  daily_affirmation_category: string | null;
+  daily_affirmation_favorited: boolean;
   manifestation_prompt: string;
   custom: CustomAffirmation[];
   journal_entry: string;
+};
+
+export type AffirmationHistoryEntry = {
+  id: string;
+  text: string;
+  category: string | null;
+  favorited: boolean;
+  created_at: string;
 };

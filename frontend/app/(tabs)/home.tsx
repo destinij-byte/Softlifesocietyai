@@ -13,7 +13,7 @@ import { StaggerIn } from "@/components/StaggerIn";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
-import { Alignment, CatalogEntry, DailySummary, HomeContext, LeaderboardRow, MealSuggestion, MyChallenge, Routine, WaterState } from "@/services/types";
+import { Alignment, AffirmationState, CatalogEntry, DailySummary, HomeContext, LeaderboardRow, MealSuggestion, MyChallenge, Routine, WaterState } from "@/services/types";
 import { spacing } from "@/theme/tokens";
 
 function greeting(): string {
@@ -36,6 +36,7 @@ export default function Home() {
   const [mood, setMood] = useState<string | null>(null);
   const [homeContext, setHomeContext] = useState<HomeContext | null>(null);
   const [alignment, setAlignment] = useState<Alignment | null>(null);
+  const [affirmation, setAffirmation] = useState<AffirmationState | null>(null);
 
   const [suggestion, setSuggestion] = useState<MealSuggestion | null>(null);
   const [busy, setBusy] = useState(false);
@@ -54,6 +55,7 @@ export default function Home() {
       apiRequest<{ mood: string | null }>("/home/mood"),
       apiRequest<HomeContext>("/home/context"),
       apiRequest<Alignment>("/progress/alignment"),
+      apiRequest<AffirmationState>("/affirmations/morning"),
     ]);
 
     if (results[0].status === "fulfilled") setSummary(results[0].value);
@@ -65,6 +67,7 @@ export default function Home() {
     if (results[6].status === "fulfilled") setMood(results[6].value.mood);
     if (results[7].status === "fulfilled") setHomeContext(results[7].value);
     if (results[8].status === "fulfilled") setAlignment(results[8].value);
+    if (results[9].status === "fulfilled") setAffirmation(results[9].value);
     setLoaded(true);
   };
 
@@ -149,8 +152,17 @@ export default function Home() {
         </View>
       </StaggerIn>
 
-      {Object.keys(moodOptions).length > 0 && (
+      {affirmation && (
         <StaggerIn index={1}>
+          <Card accent style={{ gap: 4 }}>
+            <Muted style={{ fontSize: 11, letterSpacing: 1 }}>✨ TODAY'S AFFIRMATION</Muted>
+            <Body style={{ fontStyle: "italic", fontSize: 15, lineHeight: 21 }}>"{affirmation.daily_affirmation}"</Body>
+          </Card>
+        </StaggerIn>
+      )}
+
+      {Object.keys(moodOptions).length > 0 && (
+        <StaggerIn index={2}>
           <View style={{ gap: spacing.sm }}>
             <Subtitle style={{ fontSize: 14 }}>How are you feeling today?</Subtitle>
             <View style={{ flexDirection: "row", gap: spacing.xs }}>
@@ -179,7 +191,7 @@ export default function Home() {
         </StaggerIn>
       )}
 
-      <StaggerIn index={2}>
+      <StaggerIn index={3}>
         <Card style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Subtitle style={{ fontSize: 15 }}>Today's Ritual</Subtitle>

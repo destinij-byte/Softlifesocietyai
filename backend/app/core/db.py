@@ -42,6 +42,7 @@ async def ensure_indexes(db: AsyncIOMotorDatabase | None = None) -> None:
 
     await db.routines.create_index([("user_id", 1), ("type", 1)], unique=True)
     await db.affirmations.create_index([("user_id", 1), ("type", 1)], unique=True)
+    await db.affirmation_history.create_index([("user_id", 1), ("type", 1), ("log_date", 1), ("created_at", -1)])
 
     await db.challenge_participants.create_index([("user_id", 1), ("slug", 1)])
     await db.challenge_participants.create_index([("user_id", 1), ("active", 1)])

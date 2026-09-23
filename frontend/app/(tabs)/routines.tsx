@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from "react";
-import { View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { Pressable, Share, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Screen } from "@/components/Screen";
 import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
@@ -8,7 +8,7 @@ import { TextField } from "@/components/TextField";
 import { Icon } from "@/components/Icon";
 import { useAppTheme } from "@/context/ThemeContext";
 import { apiRequest } from "@/services/api";
-import { AffirmationState, Routine } from "@/services/types";
+import { AffirmationHistoryEntry, AffirmationState, CatalogEntry, Routine } from "@/services/types";
 import { spacing, typography } from "@/theme/tokens";
 
 export default function Routines() {
@@ -23,6 +23,14 @@ export default function Routines() {
   const [journalSaving, setJournalSaving] = useState(false);
   const [newAffirmation, setNewAffirmation] = useState("");
 
+  const [categories, setCategories] = useState<Record<string, CatalogEntry>>({});
+  const [regenerating, setRegenerating] = useState(false);
+  const [history, setHistory] = useState<AffirmationHistoryEntry[] | null>(null);
+
+  useEffect(() => {
+    apiRequest<Record<string, CatalogEntry>>("/blueprint/affirmation-categories", { auth: false }).then(setCategories);
+  }, []);
+
   const load = async (routineType: "morning" | "night") => {
     const [routineData, affirmationData] = await Promise.all([
       apiRequest<Routine>(`/routines/${routineType}`),
@@ -31,6 +39,7 @@ export default function Routines() {
     setRoutine(routineData);
     setAffirmations(affirmationData);
     setJournalDraft(affirmationData.journal_entry);
+    setHistory(null);
   };
 
   useFocusEffect(
@@ -89,6 +98,44 @@ export default function Routines() {
     setAffirmations(updated);
   };
 
+  const regenerate = async (category?: string) => {
+    setRegenerating(true);
+    try {
+      const updated = await apiRequest<AffirmationState>(`/affirmations/${type}/regenerate`, {
+        method: "POST",
+        body: category ? { category } : {},
+      });
+      setAffirmations(updated);
+      setHistory(null);
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  const toggleDailyFavorite = async () => {
+    if (!affirmations) return;
+    setAffirmations({ ...affirmations, daily_affirmation_favorited: !affirmations.daily_affirmation_favorited });
+    await apiRequest(`/affirmations/${type}/history/${affirmations.daily_affirmation_id}/favorite`, { method: "PUT" });
+  };
+
+  const shareAffirmation = async () => {
+    if (!affirmations) return;
+    try {
+      await Share.share({ message: affirmations.daily_affirmation });
+    } catch {
+      // Share sheet being dismissed throws on some platforms — not an error worth surfacing.
+    }
+  };
+
+  const toggleHistory = async () => {
+    if (history) {
+      setHistory(null);
+      return;
+    }
+    const entries = await apiRequest<AffirmationHistoryEntry[]>(`/affirmations/${type}/history`);
+    setHistory(entries);
+  };
+
   const doneCount = routine?.steps.filter((s) => s.done).length ?? 0;
 
   return (
@@ -115,10 +162,57 @@ export default function Routines() {
 
       {affirmations && (
         <Card elevated style={{ gap: spacing.sm }}>
-          <Subtitle style={{ fontSize: 16 }}>✨ Today's Affirmation</Subtitle>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Subtitle style={{ fontSize: 16 }}>✨ Today's Affirmation</Subtitle>
+            <Pressable onPress={toggleDailyFavorite} accessibilityRole="button" accessibilityLabel="Favorite this affirmation">
+              <Body style={{ fontSize: 18 }}>{affirmations.daily_affirmation_favorited ? "💛" : "🤍"}</Body>
+            </Pressable>
+          </View>
           <Body style={{ fontFamily: typography.displayItalic, fontSize: 16, lineHeight: 22 }}>
             "{affirmations.daily_affirmation}"
           </Body>
+
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <Button label="Regenerate" variant="secondary" onPress={() => regenerate()} loading={regenerating} />
+            <Button label="Share" variant="secondary" onPress={shareAffirmation} />
+            <Button label={history ? "Hide history" : "History"} variant="secondary" onPress={toggleHistory} />
+          </View>
+
+          {Object.keys(categories).length > 0 && (
+            <View style={{ gap: spacing.xs }}>
+              <Muted style={{ fontSize: 11 }}>Or pick a category</Muted>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>
+                {Object.entries(categories).map(([key, entry]) => (
+                  <Pressable
+                    key={key}
+                    onPress={() => regenerate(key)}
+                    style={{
+                      paddingHorizontal: spacing.sm,
+                      paddingVertical: 6,
+                      borderRadius: 999,
+                      backgroundColor: affirmations.daily_affirmation_category === key ? theme.primary : theme.surfaceAlt,
+                    }}
+                  >
+                    <Body style={{ fontSize: 11, color: affirmations.daily_affirmation_category === key ? "#1A1A1A" : theme.textMuted }}>
+                      {entry.emoji} {entry.label}
+                    </Body>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {history && (
+            <View style={{ gap: spacing.xs, marginTop: spacing.xs }}>
+              <Muted style={{ fontSize: 11 }}>Recent affirmations</Muted>
+              {history.length === 0 && <Muted>Nothing yet.</Muted>}
+              {history.map((entry) => (
+                <View key={entry.id} style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+                  <Body style={{ flex: 1, fontSize: 13 }}>{entry.favorited ? "💛" : "•"} {entry.text}</Body>
+                </View>
+              ))}
+            </View>
+          )}
 
           <View style={{ height: 1, backgroundColor: theme.border, marginVertical: spacing.xs }} />
 

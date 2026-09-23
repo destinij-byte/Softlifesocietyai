@@ -50,6 +50,7 @@ _USER_OWNED_COLLECTIONS = (
     "blueprints",
     "moods",
     "daily_checkins",
+    "affirmation_history",
 )
 
 
