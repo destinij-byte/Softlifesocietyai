@@ -10,8 +10,8 @@ export function Card({ style, accent, elevated, ...rest }: ViewProps & { accent?
       style={[
         {
           backgroundColor: theme.surface,
-          borderRadius: 20,
-          padding: 16,
+          borderRadius: 22,
+          padding: 18,
           borderWidth: 1,
           borderColor: theme.border,
           ...(accent ? { borderLeftWidth: 4, borderLeftColor: theme.accent } : {}),
@@ -28,7 +28,7 @@ export function Title({ style, ...rest }: TextProps) {
   const { theme } = useAppTheme();
   return (
     <RNText
-      style={[{ fontFamily: typography.display, fontSize: 28, color: theme.text }, style]}
+      style={[{ fontFamily: typography.displayMedium, fontSize: 30, fontWeight: "600", color: theme.text }, style]}
       {...rest}
     />
   );
@@ -38,7 +38,7 @@ export function Subtitle({ style, ...rest }: TextProps) {
   const { theme } = useAppTheme();
   return (
     <RNText
-      style={[{ fontFamily: typography.displayMedium, fontSize: 20, color: theme.text }, style]}
+      style={[{ fontFamily: typography.displayMedium, fontSize: 22, fontWeight: "600", color: theme.text }, style]}
       {...rest}
     />
   );

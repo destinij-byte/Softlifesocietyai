@@ -148,13 +148,13 @@ export default function Routines() {
       <View style={{ flexDirection: "row", gap: spacing.sm }}>
         <Button
           label="Morning"
-          icon={<Icon name="sun" size={16} color={type === "morning" ? "#1A1A1A" : theme.text} />}
+          icon={<Icon name="sun" size={16} color={type === "morning" ? "#211B1C" : theme.text} />}
           variant={type === "morning" ? "primary" : "secondary"}
           onPress={() => setType("morning")}
         />
         <Button
           label="Night"
-          icon={<Icon name="moon" size={16} color={type === "night" ? "#1A1A1A" : theme.text} />}
+          icon={<Icon name="moon" size={16} color={type === "night" ? "#211B1C" : theme.text} />}
           variant={type === "night" ? "primary" : "secondary"}
           onPress={() => setType("night")}
         />
@@ -193,7 +193,7 @@ export default function Routines() {
                       backgroundColor: affirmations.daily_affirmation_category === key ? theme.primary : theme.surfaceAlt,
                     }}
                   >
-                    <Body style={{ fontSize: 11, color: affirmations.daily_affirmation_category === key ? "#1A1A1A" : theme.textMuted }}>
+                    <Body style={{ fontSize: 11, color: affirmations.daily_affirmation_category === key ? "#211B1C" : theme.textMuted }}>
                       {entry.emoji} {entry.label}
                     </Body>
                   </Pressable>

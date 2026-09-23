@@ -1,27 +1,35 @@
+// Exact palette from the app's style guide (Playfair Display + Poppins,
+// cream/blush/ink/gold). Pink is the surface, black and gold are the
+// action, rose is for small accent text only.
 export const palette = {
-  blush: "#F6C8D8",
-  softPink: "#FCEEF3",
-  gold: "#D4AF37",
-  black: "#1A1A1A",
-  cream: "#FFF9F6",
+  cream: "#FBF6F1",
+  blush: "#F6C9D6",
+  blushLight: "#FCE8EE",
+  petal: "#E68AAA",
+  rose: "#8E3558",
+  ink: "#211B1C",
+  gold: "#C4952B",
+  muted: "#6B5F62",
+  border: "#F0E2E4",
+  white: "#FFFFFF",
 };
 
 export const darkPalette = {
-  background: "#111111",
-  card: "#1A1A1A",
-  cardAlt: "#242024",
-  text: "#FFF9F6",
-  textMuted: "#C9BEC3",
+  background: "#141112",
+  card: "#211B1C",
+  cardAlt: "#2C2325",
+  text: "#FBF6F1",
+  textMuted: "#C4B7BA",
 };
-
-export const goldGradientLight = ["#F6E2A0", "#D4AF37", "#A87A1F"];
-export const goldGradientDark = ["#F6E2A0", "#D4AF37", "#9C7A2E"];
 
 export type Theme = {
   mode: "light" | "dark";
   background: string;
   surface: string;
   surfaceAlt: string;
+  // Blush Light — tiles, ring tracks, inner panels. Distinct from
+  // surfaceAlt (Blush), which is for hero cards, chips, and user bubbles.
+  tileBackground: string;
   primary: string;
   accent: string;
   text: string;
@@ -29,7 +37,6 @@ export type Theme = {
   border: string;
   success: string;
   danger: string;
-  goldGradient: string[];
   // The bottom nav is a deliberate departure from the content surfaces —
   // always a near-black bar with gold accents, in both themes. It's the one
   // piece of chrome that stays constant so it reads as a signature, not
@@ -41,18 +48,18 @@ export type Theme = {
 export const lightTheme: Theme = {
   mode: "light",
   background: palette.cream,
-  surface: "#FFFFFF",
+  surface: palette.white,
   surfaceAlt: palette.blush,
+  tileBackground: palette.blushLight,
   primary: palette.gold,
-  accent: palette.gold,
-  text: palette.black,
-  textMuted: "#7A6E72",
-  border: "#F0DCE3",
+  accent: palette.rose,
+  text: palette.ink,
+  textMuted: palette.muted,
+  border: palette.border,
   success: "#7BA98A",
   danger: "#C4665A",
-  goldGradient: goldGradientLight,
-  tabBarBackground: palette.black,
-  tabBarInactive: "#8A8286",
+  tabBarBackground: palette.ink,
+  tabBarInactive: "#A99C98",
 };
 
 export const darkTheme: Theme = {
@@ -60,15 +67,15 @@ export const darkTheme: Theme = {
   background: darkPalette.background,
   surface: darkPalette.card,
   surfaceAlt: darkPalette.cardAlt,
+  tileBackground: darkPalette.cardAlt,
   primary: palette.gold,
-  accent: palette.blush,
+  accent: palette.petal,
   text: darkPalette.text,
   textMuted: darkPalette.textMuted,
-  border: "#2E2A2C",
+  border: "#3A2F31",
   success: "#8FC7A0",
   danger: "#E08A7D",
-  goldGradient: goldGradientDark,
-  tabBarBackground: "#0D0D0D",
+  tabBarBackground: "#0D0B0B",
   tabBarInactive: "#8A8286",
 };
 
@@ -85,20 +92,21 @@ export const spacing = {
   xs: 4,
   sm: 8,
   md: 16,
-  lg: 24,
+  lg: 20,
   xl: 32,
   xxl: 48,
 };
 
 export const radii = {
   sm: 8,
-  md: 16,
-  lg: 24,
+  md: 18,
+  lg: 26,
   pill: 999,
 };
 
-// Soft, dimensional shadows used sparingly on hero/accent surfaces so the app
-// reads as editorial-flat most of the time, with a little lift where it counts.
+// Soft, dimensional shadow used sparingly on lifted surfaces so the app
+// reads as editorial-flat most of the time, with a little lift where it
+// counts. No gradients anywhere in this system — flat color fills only.
 export const elevation = {
   soft: {
     shadowColor: "#000",

@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FCEEF3"
+      "backgroundColor": "#FBF6F1"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -21,7 +21,7 @@
       "package": "ai.softlifesocietyai.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#FCEEF3"
+        "backgroundColor": "#FBF6F1"
       }
     },
     "plugins": ["expo-router", "expo-font"],

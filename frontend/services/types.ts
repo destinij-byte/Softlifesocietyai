@@ -58,6 +58,7 @@ export type DailySummary = {
   total_fat_g: number;
   goal_fat_g: number;
   entries: FoodEntry[];
+  streak: number;
 };
 
 export type FoodResult = {

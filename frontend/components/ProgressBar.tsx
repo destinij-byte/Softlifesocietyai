@@ -1,6 +1,5 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme } from "@/context/ThemeContext";
 import { radii } from "@/theme/tokens";
 
@@ -9,17 +8,8 @@ export function ProgressBar({ progress, danger }: { progress: number; danger?: b
   const clamped = Math.max(0, Math.min(1, progress));
 
   return (
-    <View style={[styles.track, { backgroundColor: theme.surfaceAlt, borderColor: danger ? theme.danger : theme.accent }]}>
-      {danger ? (
-        <View style={[styles.fill, { width: `${clamped * 100}%`, backgroundColor: theme.danger }]} />
-      ) : (
-        <LinearGradient
-          colors={theme.goldGradient as [string, string, string]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.fill, { width: `${clamped * 100}%` }]}
-        />
-      )}
+    <View style={[styles.track, { backgroundColor: theme.tileBackground }]}>
+      <View style={[styles.fill, { width: `${clamped * 100}%`, backgroundColor: danger ? theme.danger : theme.primary }]} />
     </View>
   );
 }
@@ -29,7 +19,6 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: radii.pill,
     overflow: "hidden",
-    borderWidth: 1,
   },
   fill: {
     height: "100%",

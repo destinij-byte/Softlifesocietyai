@@ -4,9 +4,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppTheme } from "@/context/ThemeContext";
 import { spacing } from "@/theme/tokens";
 
-type ScreenProps = ViewProps & { scroll?: boolean };
+type ScreenProps = ViewProps & { scroll?: boolean; floating?: React.ReactNode };
 
-export function Screen({ children, style, scroll = true, ...rest }: ScreenProps) {
+// `floating` renders outside the scroll container, anchored to the screen
+// itself (e.g. a FAB) — a child placed directly in `children` would instead
+// scroll away with the content, since it'd live inside the ScrollView.
+export function Screen({ children, style, scroll = true, floating, ...rest }: ScreenProps) {
   const { theme } = useAppTheme();
 
   const Container = scroll ? ScrollView : View;
@@ -20,6 +23,7 @@ export function Screen({ children, style, scroll = true, ...rest }: ScreenProps)
       >
         {children}
       </Container>
+      {floating}
     </SafeAreaView>
   );
 }

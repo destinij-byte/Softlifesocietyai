@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { Share, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { Screen } from "@/components/Screen";
 import { Card, Title, Subtitle, Body, Muted } from "@/components/Themed";
 import { Button } from "@/components/Button";
@@ -38,9 +37,9 @@ function IntensityBadge({ intensity }: { intensity: string }) {
     );
   }
   return (
-    <LinearGradient colors={theme.goldGradient as [string, string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badge}>
-      <Body style={[styles.badgeText, { color: "#241704" }]}>MEDIUM</Body>
-    </LinearGradient>
+    <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+      <Body style={[styles.badgeText, { color: theme.text }]}>MEDIUM</Body>
+    </View>
   );
 }
 
@@ -121,7 +120,7 @@ export default function Challenges() {
     <Screen>
       <View style={{ gap: 6 }}>
         <Title>Wins</Title>
-        <LinearGradient colors={theme.goldGradient as [string, string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.goldRule} />
+        <View style={[styles.goldRule, { backgroundColor: theme.primary }]} />
         <Muted>Do hard things, together.</Muted>
       </View>
 
@@ -181,7 +180,7 @@ export default function Challenges() {
           ))}
       </View>
 
-      <Card accent style={{ gap: spacing.sm }}>
+      <Card style={{ gap: spacing.sm }}>
         <Subtitle style={{ fontSize: 15 }}>🏆 Family & Friends Leaderboard</Subtitle>
         {leaderboard.map((row) => (
           <View

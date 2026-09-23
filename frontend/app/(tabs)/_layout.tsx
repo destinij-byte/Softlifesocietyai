@@ -12,7 +12,7 @@ function TabIcon({ name, color, focused }: { name: IconName; color: string; focu
       style={
         focused
           ? {
-              backgroundColor: "rgba(212,175,55,0.16)",
+              backgroundColor: "rgba(196,149,43,0.16)",
               borderRadius: radii.md,
               paddingHorizontal: 12,
               paddingVertical: 5,
@@ -42,7 +42,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.tabBarInactive,
-        tabBarStyle: { backgroundColor: theme.tabBarBackground, borderTopColor: "rgba(212,175,55,0.14)" },
+        tabBarStyle: { backgroundColor: theme.tabBarBackground, borderTopColor: "rgba(196,149,43,0.14)" },
         tabBarLabelStyle: { fontSize: 10 },
         tabBarShowLabel: true,
       }}
@@ -53,7 +53,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="luna"
-        options={{ title: "Luna", tabBarIcon: ({ color, focused }) => <TabIcon name="sparkle" color={color} focused={focused} /> }}
+        options={{ title: "Luna", tabBarIcon: ({ color, focused }) => <TabIcon name="plus" color={color} focused={focused} /> }}
       />
       <Tabs.Screen
         name="nourish-ai"

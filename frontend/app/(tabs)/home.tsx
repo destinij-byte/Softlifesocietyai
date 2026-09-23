@@ -154,7 +154,7 @@ export default function Home() {
 
       {affirmation && (
         <StaggerIn index={1}>
-          <Card accent style={{ gap: 4 }}>
+          <Card style={{ gap: 4, backgroundColor: theme.surfaceAlt, borderWidth: 0 }}>
             <Muted style={{ fontSize: 11, letterSpacing: 1 }}>✨ TODAY'S AFFIRMATION</Muted>
             <Body style={{ fontStyle: "italic", fontSize: 15, lineHeight: 21 }}>"{affirmation.daily_affirmation}"</Body>
           </Card>
@@ -182,7 +182,7 @@ export default function Home() {
                       backgroundColor: selected ? theme.primary : theme.surfaceAlt,
                     }}
                   >
-                    <Body style={{ fontSize: 11, color: selected ? "#1A1A1A" : theme.textMuted }}>{entry.label}</Body>
+                    <Body style={{ fontSize: 11, color: selected ? "#211B1C" : theme.textMuted }}>{entry.label}</Body>
                   </Pressable>
                 );
               })}
@@ -238,12 +238,12 @@ export default function Home() {
       </StaggerIn>
 
       <StaggerIn index={4}>
-        <Card style={{ backgroundColor: theme.mode === "dark" ? theme.surfaceAlt : "#1A1A1A", gap: spacing.sm }}>
+        <Card style={{ backgroundColor: theme.mode === "dark" ? theme.surfaceAlt : "#211B1C", gap: spacing.sm }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
             <LunaAvatar size={28} />
             <Subtitle style={{ fontSize: 13, color: theme.primary }}>LUNA</Subtitle>
           </View>
-          <Body style={{ color: "#FFF9F6" }}>
+          <Body style={{ color: "#FBF6F1" }}>
             {summary && remaining !== null
               ? `${remaining} calories left today — want me to build a dinner that fits?`
               : "I'm here whenever you want to plan today together."}
@@ -340,7 +340,7 @@ function StepCheckbox({ done, color, track }: { done: boolean; color: string; tr
       {done ? (
         <>
           <Circle cx="12" cy="12" r="10" fill={color} />
-          <Path d="M7.5 12.5 10.3 15.3 16.5 9" stroke="#1A1A1A" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <Path d="M7.5 12.5 10.3 15.3 16.5 9" stroke="#211B1C" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </>
       ) : (
         <Circle cx="12" cy="12" r="9.3" stroke={track} strokeWidth={1.6} fill="none" />

@@ -22,8 +22,8 @@ export function LunaAvatar({ size = 38 }: LunaAvatarProps) {
           right: -3,
           bottom: -3,
           borderRadius: (size + 6) / 2,
-          borderWidth: 1.5,
-          borderColor: theme.accent,
+          borderWidth: 2,
+          borderColor: theme.primary,
         }}
       />
       <View

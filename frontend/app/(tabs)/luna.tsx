@@ -138,7 +138,7 @@ export default function YourAI() {
                 },
               ]}
             >
-              <Body style={{ color: item.role === "user" ? "#1A1A1A" : theme.text }}>{item.content}</Body>
+              <Body style={{ color: item.role === "user" ? "#211B1C" : theme.text }}>{item.content}</Body>
               {(item.actions ?? []).map((action: LunaAction, actionIndex: number) => {
                 const messageId = item.id ?? String(index);
                 const key = `${messageId}:${actionIndex}`;
@@ -160,7 +160,7 @@ export default function YourAI() {
                       opacity: done ? 0.6 : 1,
                     }}
                   >
-                    <Body style={{ color: done ? theme.primary : "#1A1A1A", fontWeight: "600" }}>{done ? "✓ Done" : action.label}</Body>
+                    <Body style={{ color: done ? theme.primary : "#211B1C", fontWeight: "600" }}>{done ? "✓ Done" : action.label}</Body>
                   </Pressable>
                 );
               })}

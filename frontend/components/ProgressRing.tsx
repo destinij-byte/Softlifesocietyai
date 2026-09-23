@@ -1,38 +1,35 @@
 import React from "react";
 import { View } from "react-native";
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import { useAppTheme } from "@/context/ThemeContext";
 
 type ProgressRingProps = {
   progress: number;
   size?: number;
   strokeWidth?: number;
+  color?: string;
+  trackColor?: string;
   children?: React.ReactNode;
 };
 
-export function ProgressRing({ progress, size = 180, strokeWidth = 14, children }: ProgressRingProps) {
+export function ProgressRing({ progress, size = 180, strokeWidth = 14, color, trackColor, children }: ProgressRingProps) {
   const { theme } = useAppTheme();
   const clamped = Math.max(0, Math.min(1, progress));
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - clamped);
+  // Never a solid full track at 0% — a sliver of fill always shows so the
+  // ring reads as "in progress," not broken.
+  const offset = circumference * (1 - Math.max(clamped, 0.015));
 
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} style={{ position: "absolute" }}>
-        <Defs>
-          <SvgLinearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            {theme.goldGradient.map((color, i) => (
-              <Stop key={color} offset={`${(i / (theme.goldGradient.length - 1)) * 100}%`} stopColor={color} />
-            ))}
-          </SvgLinearGradient>
-        </Defs>
-        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={theme.surfaceAlt} strokeWidth={strokeWidth} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={trackColor ?? theme.tileBackground} strokeWidth={strokeWidth} fill="none" />
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="url(#ringGradient)"
+          stroke={color ?? theme.primary}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           fill="none"

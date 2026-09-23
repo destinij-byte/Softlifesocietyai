@@ -46,6 +46,7 @@ class DailySummary(BaseModel):
     total_fat_g: float
     goal_fat_g: float
     entries: list[FoodLogOut]
+    streak: int
 
 
 class FoodResult(BaseModel):
@@ -61,6 +62,29 @@ class FoodResult(BaseModel):
 # non-negative fields) at the point it's generated in nourish_ai.py — this
 # reuse just gives FastAPI's response_model the identical shape.
 MealSuggestion = MealSuggestionOut
+
+
+async def _compute_streak(db: AsyncIOMotorDatabase, user_id: str, today: date) -> int:
+    """Consecutive days with at least one food log, counting back from today.
+    If today has nothing logged yet, counting starts from yesterday instead
+    — so the streak still reads as "3" all day today until it's actually
+    broken, rather than dropping to 0 the instant the clock rolls over.
+    Computed fresh from `food_logs` every call (same pattern as Night Reset/
+    Progress/Weekly Reset) rather than stored, so it can never drift out of
+    sync with the underlying log."""
+    window_start = (today - timedelta(days=60)).isoformat()
+    cursor = db.food_logs.find({"user_id": user_id, "log_date": {"$gte": window_start}}, {"log_date": 1})
+    logged_dates = {doc["log_date"] async for doc in cursor}
+
+    cursor_day = today
+    if cursor_day.isoformat() not in logged_dates:
+        cursor_day -= timedelta(days=1)
+
+    streak = 0
+    while cursor_day.isoformat() in logged_dates:
+        streak += 1
+        cursor_day -= timedelta(days=1)
+    return streak
 
 
 def _goal(user: dict) -> dict:
@@ -98,18 +122,29 @@ async def set_goal(
 
 @router.get("/today", response_model=DailySummary)
 async def get_today(
+    log_date: str | None = Query(default=None, description="ISO date (YYYY-MM-DD); defaults to today. Future dates are clamped to today."),
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    today = date.today().isoformat()
-    cursor = db.food_logs.find({"user_id": str(current_user["_id"]), "log_date": today}).sort("logged_at", 1)
+    today = date.today()
+    target = today
+    if log_date:
+        try:
+            parsed = date.fromisoformat(log_date)
+        except ValueError:
+            parsed = today
+        target = min(parsed, today)
+    target_iso = target.isoformat()
+
+    cursor = db.food_logs.find({"user_id": str(current_user["_id"]), "log_date": target_iso}).sort("logged_at", 1)
     entries_raw = await cursor.to_list(length=200)
     fields = ("name", "calories", "protein_g", "carbs_g", "fat_g", "meal_type", "emoji", "logged_at")
     entries = [FoodLogOut(id=str(e["_id"]), **{k: e.get(k, 0) for k in fields}) for e in entries_raw]
     goal = _goal(current_user)
+    streak = await _compute_streak(db, str(current_user["_id"]), today)
 
     return DailySummary(
-        date=today,
+        date=target_iso,
         total_calories=sum(e.calories for e in entries),
         goal_calories=goal["calorie_goal"],
         total_protein_g=sum(e.protein_g for e in entries),
@@ -119,6 +154,7 @@ async def get_today(
         total_fat_g=sum(e.fat_g for e in entries),
         goal_fat_g=goal["fat_goal_g"],
         entries=entries,
+        streak=streak,
     )
 
 
