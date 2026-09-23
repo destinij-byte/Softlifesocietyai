@@ -28,6 +28,7 @@ from app.schemas.auth import (
     SignUpRequest,
     UserOut,
 )
+from app.services.email import send_password_reset_email
 from app.services.users import serialize_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -205,10 +206,13 @@ async def request_password_reset(payload: PasswordResetRequest, db: AsyncIOMotor
                 "used": False,
             }
         )
-        # TODO(email): wire a transactional email provider (SendGrid, Postmark,
-        # etc.) before this ships to production — for now the reset token only
-        # ever reaches the requester via this server log line (dev-mode only).
-        logger.info("Password reset requested for %s — token: %s", email, token)
+        settings = get_settings()
+        reset_url = f"{settings.password_reset_url_base}?token={token}"
+        sent = await send_password_reset_email(to=email, reset_url=reset_url)
+        if not sent:
+            # No RESEND_API_KEY configured, or Resend's API call failed —
+            # dev-mode fallback so account recovery is still testable locally.
+            logger.info("Password reset requested for %s — token: %s", email, token)
 
     return MessageOut(message="If that email has an account, we've sent reset instructions.")
 

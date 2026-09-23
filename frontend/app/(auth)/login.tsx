@@ -49,6 +49,9 @@ export default function Login() {
       {error && <Body style={{ color: "#C4665A" }}>⚠️ {error}</Body>}
 
       <Button label="Log in" emoji="🌸" onPress={onSubmit} loading={loading} disabled={!email || !password} />
+      <Muted onPress={() => router.push("/(auth)/forgot-password")} style={{ textAlign: "center" }}>
+        Forgot password?
+      </Muted>
       <Muted onPress={() => router.push("/(auth)/signup")} style={{ textAlign: "center" }}>
         New here? Start your free trial
       </Muted>

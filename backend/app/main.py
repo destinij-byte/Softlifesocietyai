@@ -14,6 +14,17 @@ from app.core.db import close_client, ensure_indexes, get_client
 from app.routers import affirmations, auth, blueprint, challenges, goals, home, luna, night_reset, nutrition, progress, routines, social, subscriptions, weekly_reset, webhooks
 
 logger = logging.getLogger("soft_life_society")
+# Root logging has no handler by default (Python only prints WARNING+ to
+# stderr as a last resort), so every logger.info() in this app — including
+# the password-reset dev-mode fallback that's the *only* way to recover the
+# reset token until RESEND_API_KEY is set — would otherwise be silently
+# dropped. Configure this app's own logger explicitly rather than touching
+# the root logger, so other libraries' log levels are left alone.
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    logger.addHandler(_handler)
+logger.setLevel(logging.INFO)
 
 settings = get_settings()
 

@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     resend_api_key: str | None = None
     resend_from_email: str = "Soft Life Society <onboarding@resend.dev>"
 
+    # Base URL the password-reset email's link is built from — the app's own
+    # custom URL scheme (see frontend/app.json "scheme") by default, so
+    # tapping the link on a device with the app installed opens it straight
+    # to the reset screen. Override with a universal-link https:// URL once
+    # one is set up, without changing any other reset-flow code.
+    password_reset_url_base: str = "softlifesociety://reset-password"
+
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
