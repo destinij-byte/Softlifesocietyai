@@ -53,6 +53,8 @@ async def ensure_indexes(db: AsyncIOMotorDatabase | None = None) -> None:
 
     await db.luna_memories.create_index([("user_id", 1), ("created_at", -1)])
 
+    await db.billing_events.create_index([("user_id", 1), ("received_at", -1)])
+
     # Shared sliding-window limiter (app/core/rate_limit.py) used by Luna chat,
     # signup, password-reset-request, and the AI-cost nutrition endpoints —
     # one collection, one index, instead of a table per endpoint.

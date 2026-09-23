@@ -52,6 +52,7 @@ class UserOut(BaseModel):
     trial_ends_at: datetime
     subscription_status: str = "trialing"
     subscription_tier: str | None = None
+    subscription_expires_at: datetime | None = None
 
 
 class AuthResponse(BaseModel):

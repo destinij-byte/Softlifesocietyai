@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-
+from app.core.time_utils import ensure_aware, utcnow
 from app.schemas.auth import UserOut
 
 
@@ -13,16 +12,20 @@ def serialize_user(user: dict) -> UserOut:
         trial_ends_at=user["trial_ends_at"],
         subscription_status=subscription_status(user),
         subscription_tier=user.get("subscription_tier"),
+        subscription_expires_at=user.get("subscription_expires_at"),
     )
 
 
 def subscription_status(user: dict) -> str:
+    """Any real subscription-lifecycle status (active, free, canceled,
+    expired, billing_issue — whatever RevenueCat sync writes) is trusted
+    as-is. Only "trialing" or an unset status falls back to a fresh
+    trial-date computation, since "trialing" is the one status that can go
+    stale on its own without any subscription event ever firing."""
     stored_status = user.get("subscription_status")
-    if stored_status in ("active", "free"):
+    if stored_status and stored_status != "trialing":
         return stored_status
-    trial_ends_at = user["trial_ends_at"]
-    if trial_ends_at.tzinfo is None:
-        trial_ends_at = trial_ends_at.replace(tzinfo=timezone.utc)
-    if datetime.now(timezone.utc) < trial_ends_at:
+    trial_ends_at = ensure_aware(user["trial_ends_at"])
+    if utcnow() < trial_ends_at:
         return "trialing"
     return "expired"

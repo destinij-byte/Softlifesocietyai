@@ -5,8 +5,9 @@ export type User = {
   avatar_emoji: string;
   trial_started_at: string;
   trial_ends_at: string;
-  subscription_status: "trialing" | "active" | "free" | "expired" | "canceled";
+  subscription_status: "trialing" | "active" | "free" | "expired" | "canceled" | "billing_issue";
   subscription_tier: string | null;
+  subscription_expires_at: string | null;
 };
 
 export type AuthResponse = {

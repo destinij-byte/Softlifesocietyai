@@ -30,6 +30,24 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed CORS origins, e.g. "https://app.example.com,exp://localhost:19000"
     allowed_origins: str = _DEFAULT_ALLOWED_ORIGINS
 
+    # RevenueCat — real subscription entitlement verification. The secret key
+    # is a server-to-server credential (never shipped to the client) used to
+    # ask "what is this user actually entitled to right now" instead of
+    # trusting anything the client claims. The webhook secret is whatever
+    # value you configure as the Authorization header in the RevenueCat
+    # dashboard's webhook settings — we just compare it verbatim. Both are
+    # None until you create a RevenueCat account and set them; subscription
+    # sync/webhook endpoints fail closed (never silently grant access) until
+    # they're configured.
+    revenuecat_secret_api_key: str | None = None
+    revenuecat_webhook_secret: str | None = None
+
+    # Resend — transactional email (password reset). None until you create a
+    # Resend account; password-reset requests fail over to logging the token
+    # server-side (dev-mode behavior) rather than silently pretending to send.
+    resend_api_key: str | None = None
+    resend_from_email: str = "Soft Life Society <onboarding@resend.dev>"
+
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
@@ -78,4 +96,14 @@ def validate_production_settings(settings: Settings) -> None:
         logger.warning(
             "ANTHROPIC_API_KEY is not set in production — Luna and Nourish AI will run in their "
             "offline/templated fallback mode for every user until this is configured."
+        )
+    if not settings.revenuecat_secret_api_key or not settings.revenuecat_webhook_secret:
+        logger.warning(
+            "RevenueCat is not fully configured (REVENUECAT_SECRET_API_KEY / REVENUECAT_WEBHOOK_SECRET) — "
+            "subscription sync and the RevenueCat webhook will refuse to grant entitlement until both are set."
+        )
+    if not settings.resend_api_key:
+        logger.warning(
+            "RESEND_API_KEY is not set in production — password reset emails will not be delivered; "
+            "the reset token will only be logged server-side."
         )

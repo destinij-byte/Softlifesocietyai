@@ -51,6 +51,7 @@ _USER_OWNED_COLLECTIONS = (
     "moods",
     "daily_checkins",
     "affirmation_history",
+    "billing_events",
 )
 
 
