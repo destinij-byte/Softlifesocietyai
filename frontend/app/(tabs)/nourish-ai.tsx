@@ -88,6 +88,11 @@ export default function NourishAI() {
     setManualName("");
     setManualCalories("");
     setPhotoSuggestion(null);
+    // The meal-builder card lives outside the addMode-gated sections, so it
+    // must be cleared here too — otherwise it stays on screen with the same
+    // (possibly edited) values after a successful log, inviting an
+    // accidental duplicate entry on a second tap.
+    setBuilderSuggestion(null);
   };
 
   const logFood = async (food: FoodResult, mealType: string = "snack") => {
@@ -199,18 +204,13 @@ export default function NourishAI() {
           ))}
         </View>
         {builderSuggestion && (
-          <Card style={{ marginTop: spacing.sm }}>
-            <Subtitle>
-              {builderSuggestion.emoji} {builderSuggestion.name}
-            </Subtitle>
-            <Muted>
-              {builderSuggestion.calories} cal · {builderSuggestion.protein_g}g protein
-            </Muted>
-            {builderSuggestion.description && <Body style={{ marginTop: spacing.xs }}>{builderSuggestion.description}</Body>}
-            <View style={{ marginTop: spacing.sm }}>
-              <Button label="Add to log" emoji="➕" onPress={() => logFood(builderSuggestion)} loading={busy} />
-            </View>
-          </Card>
+          <EstimatedMealCard
+            suggestion={builderSuggestion}
+            onConfirm={(edited) => logFood(edited)}
+            onDiscard={() => setBuilderSuggestion(null)}
+            busy={busy}
+            confirmLabel="Add to log"
+          />
         )}
       </Card>
 
@@ -226,16 +226,13 @@ export default function NourishAI() {
         <Card style={{ gap: spacing.sm }}>
           <Button label="Choose photo" emoji="📷" onPress={pickPhoto} loading={busy} />
           {photoSuggestion && (
-            <>
-              <Subtitle>
-                {photoSuggestion.emoji} {photoSuggestion.name}
-              </Subtitle>
-              <Muted>
-                {photoSuggestion.calories} cal · P {photoSuggestion.protein_g}g · C {photoSuggestion.carbs_g}g · F {photoSuggestion.fat_g}g
-              </Muted>
-              {photoSuggestion.note && <Muted>{photoSuggestion.note}</Muted>}
-              <Button label="Looks right, add it" emoji="✅" onPress={() => logFood(photoSuggestion)} loading={busy} />
-            </>
+            <EstimatedMealCard
+              suggestion={photoSuggestion}
+              onConfirm={(edited) => logFood(edited)}
+              onDiscard={() => setPhotoSuggestion(null)}
+              busy={busy}
+              confirmLabel="Looks right, add it"
+            />
           )}
         </Card>
       )}
@@ -284,6 +281,77 @@ export default function NourishAI() {
       )}
       </AsyncState>
     </Screen>
+  );
+}
+
+function EstimatedMealCard({
+  suggestion,
+  onConfirm,
+  onDiscard,
+  busy,
+  confirmLabel,
+}: {
+  suggestion: MealSuggestion;
+  onConfirm: (edited: FoodResult) => void;
+  onDiscard: () => void;
+  busy: boolean;
+  confirmLabel: string;
+}) {
+  const { theme } = useAppTheme();
+  const [name, setName] = useState(suggestion.name);
+  const [calories, setCalories] = useState(String(suggestion.calories));
+  const [protein, setProtein] = useState(String(suggestion.protein_g));
+  const [carbs, setCarbs] = useState(String(suggestion.carbs_g));
+  const [fat, setFat] = useState(String(suggestion.fat_g));
+
+  const confirm = () => {
+    onConfirm({
+      name: name.trim() || suggestion.name,
+      calories: Number(calories) || 0,
+      protein_g: Number(protein) || 0,
+      carbs_g: Number(carbs) || 0,
+      fat_g: Number(fat) || 0,
+      emoji: suggestion.emoji,
+    });
+  };
+
+  return (
+    <Card style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <Subtitle style={{ fontSize: 15 }}>{suggestion.emoji} AI Estimate</Subtitle>
+        <View style={{ paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: 999, backgroundColor: theme.surfaceAlt }}>
+          <Muted style={{ fontSize: 10 }}>ESTIMATE — REVIEW BEFORE SAVING</Muted>
+        </View>
+      </View>
+      {(suggestion.description || suggestion.note) && <Body style={{ color: theme.textMuted }}>{suggestion.description ?? suggestion.note}</Body>}
+
+      <TextField placeholder="Meal name" value={name} onChangeText={setName} />
+      <View style={{ flexDirection: "row", gap: spacing.sm }}>
+        <View style={{ flex: 1 }}>
+          <Muted style={{ fontSize: 11 }}>Calories</Muted>
+          <TextField value={calories} onChangeText={setCalories} keyboardType="number-pad" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Muted style={{ fontSize: 11 }}>Protein (g)</Muted>
+          <TextField value={protein} onChangeText={setProtein} keyboardType="number-pad" />
+        </View>
+      </View>
+      <View style={{ flexDirection: "row", gap: spacing.sm }}>
+        <View style={{ flex: 1 }}>
+          <Muted style={{ fontSize: 11 }}>Carbs (g)</Muted>
+          <TextField value={carbs} onChangeText={setCarbs} keyboardType="number-pad" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Muted style={{ fontSize: 11 }}>Fat (g)</Muted>
+          <TextField value={fat} onChangeText={setFat} keyboardType="number-pad" />
+        </View>
+      </View>
+
+      <View style={{ flexDirection: "row", gap: spacing.sm }}>
+        <Button label={confirmLabel} emoji="✅" onPress={confirm} loading={busy} disabled={!name.trim() || !calories} />
+        <Button label="Discard" variant="ghost" onPress={onDiscard} />
+      </View>
+    </Card>
   );
 }
 
