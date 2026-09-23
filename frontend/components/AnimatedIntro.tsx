@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { LunaAvatar } from "@/components/LunaAvatar";
 import { useAppTheme } from "@/context/ThemeContext";
 import { typography } from "@/theme/tokens";
 
-const AUTO_ADVANCE_MS = 2600;
+const AUTO_ADVANCE_MS = 3000;
 
 export function AnimatedIntro({ onDone }: { onDone: () => void }) {
   const { theme } = useAppTheme();
@@ -13,6 +14,8 @@ export function AnimatedIntro({ onDone }: { onDone: () => void }) {
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const taglineTranslate = useRef(new Animated.Value(14)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
+  const lunaOpacity = useRef(new Animated.Value(0)).current;
+  const lunaTranslate = useRef(new Animated.Value(10)).current;
 
   useEffect(() => {
     Animated.sequence([
@@ -24,6 +27,10 @@ export function AnimatedIntro({ onDone }: { onDone: () => void }) {
       Animated.parallel([
         Animated.timing(taglineOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
         Animated.timing(taglineTranslate, { toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(lunaOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
+        Animated.timing(lunaTranslate, { toValue: 0, duration: 450, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ]),
     ]).start();
 
@@ -60,6 +67,12 @@ export function AnimatedIntro({ onDone }: { onDone: () => void }) {
           >
             Plan your life. Glow daily. Become her.
           </Animated.Text>
+          <Animated.View
+            style={[styles.luna, { opacity: lunaOpacity, transform: [{ translateY: lunaTranslate }] }]}
+          >
+            <LunaAvatar size={40} />
+            <Animated.Text style={[styles.lunaLabel, { color: theme.textMuted }]}>with Luna Reyes</Animated.Text>
+          </Animated.View>
         </View>
       </LinearGradient>
     </Pressable>
@@ -82,5 +95,16 @@ const styles = StyleSheet.create({
     fontSize: 17,
     marginTop: 18,
     letterSpacing: 0.3,
+  },
+  luna: {
+    marginTop: 22,
+    alignItems: "center",
+    gap: 6,
+  },
+  lunaLabel: {
+    fontFamily: typography.body,
+    fontSize: 12,
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
 });
