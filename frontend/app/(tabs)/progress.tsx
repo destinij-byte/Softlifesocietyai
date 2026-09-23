@@ -26,7 +26,12 @@ export default function Progress() {
         {alignment && (
           <>
             <Card style={{ alignItems: "center", gap: spacing.sm, paddingVertical: spacing.lg }}>
-              <ProgressRing progress={alignment.score} size={140} strokeWidth={12}>
+              <ProgressRing
+                progress={alignment.score}
+                size={140}
+                strokeWidth={12}
+                accessibilityLabel={`Alignment, ${Math.round(alignment.score * 100)} percent`}
+              >
                 <Subtitle style={{ fontSize: 30 }}>{Math.round(alignment.score * 100)}%</Subtitle>
                 <Muted style={{ fontSize: 11 }}>Alignment</Muted>
               </ProgressRing>

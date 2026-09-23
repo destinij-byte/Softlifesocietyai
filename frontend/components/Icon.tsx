@@ -16,7 +16,8 @@ export type IconName =
   | "lock"
   | "heart"
   | "collage"
-  | "plus";
+  | "plus"
+  | "dots";
 
 type IconProps = {
   name: IconName;
@@ -135,6 +136,14 @@ export function Icon({ name, size = 22, color, strokeWidth = 1.7 }: IconProps) {
       )}
 
       {name === "plus" && <Path d="M12 5v14M5 12h14" {...stroke} />}
+
+      {name === "dots" && (
+        <>
+          <Circle cx="5.5" cy="12" r="1.6" fill={color} stroke="none" />
+          <Circle cx="12" cy="12" r="1.6" fill={color} stroke="none" />
+          <Circle cx="18.5" cy="12" r="1.6" fill={color} stroke="none" />
+        </>
+      )}
     </Svg>
   );
 }

@@ -244,7 +244,13 @@ export default function NourishAI() {
                   {remaining >= 0 ? `${remaining} left today 💕` : `${Math.abs(remaining)} over today`}
                 </Body>
               </View>
-              <ProgressRing progress={summary.goal_calories > 0 ? summary.total_calories / summary.goal_calories : 0} size={110} strokeWidth={10} color={theme.text}>
+              <ProgressRing
+                progress={summary.goal_calories > 0 ? summary.total_calories / summary.goal_calories : 0}
+                size={110}
+                strokeWidth={10}
+                color={theme.text}
+                accessibilityLabel={`Calories, ${summary.total_calories} of ${summary.goal_calories}`}
+              >
                 <Body style={{ fontSize: 30 }}>🔥</Body>
               </ProgressRing>
             </View>
@@ -455,7 +461,13 @@ function MacroCard({ label, value, goal, emoji, color }: { label: string; value:
         <Muted>{label}</Muted>
       </View>
       <View style={{ alignSelf: "center" }}>
-        <ProgressRing progress={goal > 0 ? value / goal : 0} size={72} strokeWidth={7} color={color}>
+        <ProgressRing
+          progress={goal > 0 ? value / goal : 0}
+          size={72}
+          strokeWidth={7}
+          color={color}
+          accessibilityLabel={`${label}, ${Math.round(value)} of ${Math.round(goal)} grams`}
+        >
           <Body style={{ fontSize: 24 }}>{emoji}</Body>
         </ProgressRing>
       </View>

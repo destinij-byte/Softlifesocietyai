@@ -1,45 +1,63 @@
 import React from "react";
 import { View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { useAppTheme } from "@/context/ThemeContext";
+import { colors } from "@/theme/tokens";
 
-type ProgressRingProps = {
+type Props = {
+  size: number;
+  /** 0..1. Clamped. 0 must render as an empty track, never a full ring. */
   progress: number;
-  size?: number;
-  strokeWidth?: number;
   color?: string;
   trackColor?: string;
+  strokeWidth?: number;
+  /** Centered content: emoji, number, or label. */
   children?: React.ReactNode;
+  /** e.g. "Protein, 64 of 120 grams" */
+  accessibilityLabel: string;
 };
 
-export function ProgressRing({ progress, size = 180, strokeWidth = 14, color, trackColor, children }: ProgressRingProps) {
-  const { theme } = useAppTheme();
-  const clamped = Math.max(0, Math.min(1, progress));
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  // Never a solid full track at 0% — a sliver of fill always shows so the
-  // ring reads as "in progress," not broken.
-  const offset = circumference * (1 - Math.max(clamped, 0.015));
+export function ProgressRing({
+  size,
+  progress,
+  color = colors.petal,
+  trackColor = colors.blushLight,
+  strokeWidth = 7,
+  children,
+  accessibilityLabel,
+}: Props) {
+  const p = Math.max(0, Math.min(1, Number.isFinite(progress) ? progress : 0));
+  const r = (size - strokeWidth) / 2;
+  const c = 2 * Math.PI * r;
 
   return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={size} height={size} style={{ position: "absolute" }}>
-        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={trackColor ?? theme.tileBackground} strokeWidth={strokeWidth} fill="none" />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color ?? theme.primary}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          rotation="-90"
-          origin={`${size / 2}, ${size / 2}`}
-        />
+    <View
+      style={{ width: size, height: size }}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(p * 100) }}
+    >
+      <Svg width={size} height={size}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={trackColor} strokeWidth={strokeWidth} fill="none" />
+        {p > 0 && (
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${c * p} ${c}`}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        )}
       </Svg>
-      {children}
+      <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" }} pointerEvents="none">
+        {children}
+      </View>
     </View>
   );
 }
+
+export default ProgressRing;

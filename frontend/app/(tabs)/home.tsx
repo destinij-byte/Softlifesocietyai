@@ -216,7 +216,7 @@ export default function Home() {
               ))}
             </View>
             {ritualTotal > 0 && (
-              <ProgressRing progress={ritualProgress} size={64} strokeWidth={6}>
+              <ProgressRing progress={ritualProgress} size={64} strokeWidth={6} accessibilityLabel={`Today's ritual, ${ritualDone} of ${ritualTotal} done`}>
                 <Subtitle style={{ fontSize: 15 }}>
                   {ritualDone}/{ritualTotal}
                 </Subtitle>

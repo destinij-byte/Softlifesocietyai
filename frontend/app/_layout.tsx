@@ -4,8 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import {
   useFonts as usePlayfairFonts,
   PlayfairDisplay_600SemiBold,
-  PlayfairDisplay_600SemiBold_Italic,
-  PlayfairDisplay_700Bold,
+  PlayfairDisplay_500Medium_Italic,
 } from "@expo-google-fonts/playfair-display";
 import { useFonts as usePoppinsFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold } from "@expo-google-fonts/poppins";
 import { ThemeProvider, useAppTheme } from "@/context/ThemeContext";
@@ -33,7 +32,7 @@ function RootStack() {
 }
 
 export default function RootLayout() {
-  const [playfairLoaded] = usePlayfairFonts({ PlayfairDisplay_600SemiBold, PlayfairDisplay_600SemiBold_Italic, PlayfairDisplay_700Bold });
+  const [playfairLoaded] = usePlayfairFonts({ PlayfairDisplay_600SemiBold, PlayfairDisplay_500Medium_Italic });
   const [poppinsLoaded] = usePoppinsFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold });
 
   const fontsLoaded = playfairLoaded && poppinsLoaded;
