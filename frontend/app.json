@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Soft Life Society",
+    "slug": "soft-life-society",
+    "scheme": "softlifesociety",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FCEEF3"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ai.softlifesocietyai.app"
+    },
+    "android": {
+      "package": "ai.softlifesocietyai.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#FCEEF3"
+      }
+    },
+    "plugins": ["expo-router", "expo-font"],
+    "extra": {
+      "apiUrl": "http://localhost:8000"
+    }
+  }
+}
